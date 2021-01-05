@@ -1,0 +1,16 @@
+.header {
+  --background: rgba(var(--ion-color-medium-rgb), 0.25);
+}
+
+ion-item-group {
+  margin: 8px;
+  border: 1px solid var(--ion-color-step-300);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+ion-label {
+  --padding-start: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}

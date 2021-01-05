@@ -1,0 +1,91 @@
+<ion-header translucent mode="ios">
+  <ion-toolbar>
+    <ion-title>{{item ? 'Edit' : 'Add'}} Log</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">Close</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+<ion-content class="inner-content">
+  <form [formGroup]="formGroup">
+
+    <ion-list>
+      <ion-item>
+        <ion-label>Time:</ion-label>
+        <ion-datetime
+        formControlName="time"
+        display-format="MMM DD, YYYY hh:mm a"
+      ></ion-datetime>
+      </ion-item>
+    </ion-list>
+
+    <ion-list formArrayName="symptoms" lines="none">
+      <ion-item>
+        <ion-label>
+          <h2>Symptoms:</h2>
+        </ion-label>
+        <ion-button (click)="clickAddSymptom()">
+          <ion-icon name="add"></ion-icon>Add Symptom
+        </ion-button>
+      </ion-item>
+
+      <div *ngFor="let symptom of symptoms.controls; let i=index">
+        <ion-item-group [formGroupName]="i">
+          <!-- <ion-item lines="none" class="header">
+            <ion-label>Symptom {{i+1}}</ion-label>
+            <ion-button slot="end" (click)="deleteSymptom(i)">Delete</ion-button>
+          </ion-item> -->
+          <ion-item lines="none">
+            <ion-label>Name:</ion-label>
+            <ion-input formControlName="name" placeholder="brainfog, etc..."></ion-input>
+            <ion-button slot="end" (click)="deleteSymptom(i)">Delete</ion-button>
+
+          </ion-item>
+          <ion-item lines="none">
+            <ion-label>Value:</ion-label>
+            <ion-input type="number" formControlName="value" placeholder="1-10"></ion-input>
+          </ion-item>
+        </ion-item-group>
+      </div>
+    </ion-list>
+
+    <ion-list formArrayName="mitigations" lines="none">
+      <ion-item>
+        <ion-label>
+          <h2>Mitigations:</h2>
+        </ion-label>
+        <ion-button (click)="clickAddMitigation()">
+          <ion-icon name="add"></ion-icon>Add Mitigation
+        </ion-button>
+      </ion-item>
+
+      <ion-item-group>
+        <ion-item *ngFor="let mitigation of mitigations.controls; let i=index">
+          <!-- <ion-label>Name:</ion-label> -->
+          <ion-input [formControlName]="i" placeholder="What I tried..."></ion-input>
+          <ion-button slot="end" (click)="deleteMitigation(i)">Delete</ion-button>
+        </ion-item>
+      </ion-item-group>
+    </ion-list>
+
+    <ion-grid>
+      <ion-row>
+        <ion-col>
+          <ion-button size="default" expand="block" (click)="onSaveClick()" [disabled]="!formGroup.valid">Save</ion-button>
+        </ion-col>
+        <!-- <ion-col *ngIf="editMode">
+            <ion-button
+              color="danger"
+              size="default"
+              expand="block"
+              (click)="onDeleteClick()"
+              >Delete</ion-button
+            >
+          </ion-col> -->
+        <ion-col>
+          <ion-button color="medium" size="default" expand="block" (click)="dismiss()">Cancel</ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </form>
+</ion-content>

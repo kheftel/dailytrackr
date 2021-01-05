@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "dailytrackr"
+  },
+  "targets": {
+    "dailytrackr": {
+      "hosting": {
+        "app": [
+          "dailytrackr"
+        ]
+      }
+    }
+  }
+}

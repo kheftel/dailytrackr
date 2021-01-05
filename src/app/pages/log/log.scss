@@ -1,0 +1,101 @@
+ion-fab-button {
+  --background: var(--ion-color-primary);
+  --background-hover: var(--ion-color-primary-tint);
+  --background-focused: var(--ion-color-primary-tint);
+
+  --color: white;
+}
+
+/*
+ * Material Design uses the ripple for activated
+ * so only style the iOS activated background
+ */
+.ios ion-fab-button {
+  --background-activated: var(--ion-color-step-250, #d9d9d9);
+}
+
+ion-item-group {
+  --padding-start: 8px;
+  // border-top: 1px solid var(--ion-color-step-150);
+}
+
+ion-label {
+  --padding-start: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+h2, h3 {
+  font-weight: 500;
+}
+
+ion-item {
+  --padding-start: 8px;
+
+  h3,
+  p {
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+
+  p {
+    position:relative;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    ion-badge {
+      vertical-align: middle;
+      margin-left: 4px;
+      color: white;
+      padding-left: 8px;
+      padding-right: 8px;
+      border-radius: 8px;
+      position:absolute;
+      right:0;
+    }
+  }
+}
+
+ion-item-divider {
+  --padding-start: 8px;
+  --background: rgba(var(--ion-color-medium-rgb), 0.25);
+  --color: var(--ion-text-color);
+
+  border: none;
+
+  // border-top: none;
+  // border-bottom: 1px solid var(--ion-color-step-100);
+}
+
+ion-item-divider.date {
+  // --background: var(--ion-color-step-50);
+  // border-top: 1px solid var(--ion-color-step-150);
+}
+
+.symptom {
+  border-left: 2px solid var(--ion-color-base);
+  border-bottom: 1px solid var(--ion-color-base);
+  // background: rgba(var(--ion-color-base-rgb), 0.12);
+  color: var(--ion-text-color);
+  padding-left: 8px;
+}
+
+$categories: (
+  ionic: var(--ion-color-primary),
+  angular: #ac282b,
+  communication: #8e8d93,
+  tooling: #fe4c52,
+  services: #fd8b2d,
+  design: #fed035,
+  workshop: #69bb7b,
+  food: #3bc7c4,
+  documentation: #b16be3,
+  navigation: #6600cc,
+);
+
+@each $track, $value in map-remove($categories) {
+  ion-item-sliding[track="#{$track}"] ion-label {
+    border-left: 2px solid $value;
+    border-bottom: 1px solid $value;
+    padding-left: 8px;
+  }
+}

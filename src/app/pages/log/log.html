@@ -1,0 +1,103 @@
+<ion-header translucent="true">
+  <ion-toolbar>
+    <ion-buttons *ngIf="!showSearchbar" slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <!-- <ion-segment *ngIf="ios" [(ngModel)]="segment" (ionChange)="updateSchedule()">
+      <ion-segment-button value="all">
+        All
+      </ion-segment-button>
+      <ion-segment-button value="favorites">
+        Favorites
+      </ion-segment-button>
+    </ion-segment> -->
+    <ion-title *ngIf="!ios && !showSearchbar">Log</ion-title>
+    <ion-searchbar *ngIf="showSearchbar" showCancelButton="always" [(ngModel)]="queryText" (ionChange)="updateSchedule()" (ionCancel)="showSearchbar = false" placeholder="Search"></ion-searchbar>
+    <ion-buttons slot="end">
+      <ion-button *ngIf="!ios && !showSearchbar" (click)="showSearchbar = true">
+        <ion-icon slot="icon-only" name="search"></ion-icon>
+      </ion-button>
+      <ion-button *ngIf="!showSearchbar" (click)="presentFilter()">
+        <span *ngIf="ios">Filter</span>
+        <span *ngIf="!ios">
+          <ion-icon slot="icon-only" name="options"></ion-icon>
+        </span>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <!-- <ion-toolbar *ngIf="!ios">
+    <ion-segment [(ngModel)]="segment" (ionChange)="updateSchedule()">
+      <ion-segment-button value="all">
+        All
+      </ion-segment-button>
+      <ion-segment-button value="favorites">
+        Favorites
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar> -->
+</ion-header>
+
+<ion-content fullscreen="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Log</ion-title>
+    </ion-toolbar>
+    <ion-toolbar>
+      <ion-searchbar [(ngModel)]="queryText" (ionChange)="updateSchedule()" placeholder="Search"></ion-searchbar>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-list lines="none" #scheduleList *ngIf="dataList && dataList.length > 0">
+    <ion-item-group *ngFor="let item of dataList">
+
+      <ng-container *ngIf="item.showDatetime; else time_only">
+        <ion-item-divider color="primary" class="date" sticky>
+          <ion-label>
+            <h2>{{formatDateTime(item.data.time)}}</h2>
+          </ion-label>
+        </ion-item-divider>
+      </ng-container>
+      <ng-template #time_only>
+        <ion-item-divider>
+          <ion-label>
+            <h3>{{formatTime(item.data.time)}}</h3>
+          </ion-label>
+        </ion-item-divider>
+      </ng-template>
+
+      <!--  [attr.track]="'food'" -->
+      <ion-item button (click)="edit(item)" lines="none">
+        <ion-label>
+          <h3>Symptoms:</h3>
+
+          <ng-container>
+            <p class="symptom ion-color-{{symptom.severity}}" *ngFor="let symptom of prepSymptoms(item.data.symptoms)">
+              {{symptom.name}}:<ion-badge color="{{symptom.severity}}">{{symptom.value}}</ion-badge>
+            </p>
+
+          </ng-container>
+          <h3 style="margin-top:10px" *ngIf="item.data.mitigations.length">Mitigations:</h3>
+          <p *ngFor="let m of item.data.mitigations" class="symptom ion-color-medium">
+            {{m}}
+          </p>
+        </ion-label>
+      </ion-item>
+    </ion-item-group>
+  </ion-list>
+
+  <ion-infinite-scroll threshold="10px" #infiniteScroll (ionInfinite)="handleInfiniteScroll()">
+    <ion-infinite-scroll-content loading-spinner="bubbles" loading-text="Loading more data...">
+    </ion-infinite-scroll-content>
+  </ion-infinite-scroll>
+
+
+  <!-- <ion-list-header [hidden]="list.length === 0">
+    No Items Found
+  </ion-list-header> -->
+
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end" #fab (click)="add()">
+    <ion-fab-button>
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
