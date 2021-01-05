@@ -20,7 +20,7 @@ import { format } from "date-fns";
 
 import firebase from "firebase/app";
 import "firebase/firestore";
-import { AddLogModal } from "./add.modal";
+import { LogItemModal } from "./logitem.modal";
 
 @Component({
   selector: "page-log",
@@ -71,12 +71,14 @@ export class LogPage implements OnInit {
       this.scheduleList.closeSlidingItems();
     }
 
-    this.dataList = [];
-    this.logData.getStream(null, 10).subscribe((qs) => {
-      qs.docs.forEach((doc) => {
-        this.addDoc(doc);
+    let tmpList = [];
+    this.infiniteScroll.disabled = false;
+    this.logData.getStream(this.queryText, null, 10).subscribe((docs) => {
+      docs.forEach((doc) => {
+        tmpList.push(this.prepDoc(doc));
       });
-      console.log(this.dataList);
+      this.prepList(tmpList);
+      this.dataList = tmpList;
     });
 
     // this.dataList$ = this.logData.getDayList();
@@ -98,33 +100,38 @@ export class LogPage implements OnInit {
       });
   }
 
-  addDoc(doc) {
+  prepList(list) {
+    for (let i = 0; i < list.length; i++) {
+      let item = list[i];
+      if (i > 0) {
+        let lastItem = list[i - 1];
+        let curDate = this.formatDate(item.data.time);
+        let lastDate = this.formatDate(lastItem.data.time);
+        item.showDatetime = curDate != lastDate;
+      }
+      else {
+        item.showDatetime = true;
+      }
+    }
+  }
+
+  prepDoc(doc) {
     let item: any = {
       data: doc.data(),
       ref: doc.ref,
       id: doc.id,
     };
-    if (this.dataList.length > 0) {
-      let lastItem = this.dataList[this.dataList.length - 1];
-      let curDate = this.formatDate(item.data.time);
-      let lastDate = this.formatDate(lastItem.data.time);
-      if (curDate != lastDate) {
-        item.showDatetime = true;
-      }
-    } else {
-      item.showDatetime = true;
-    }
 
-    this.dataList.push(item);
+    return item;
   }
 
   edit(item) {
     this.modalCtrl
       .create({
-        component: AddLogModal,
+        component: LogItemModal,
         // cssClass: 'addlog-modal auto-height',
         componentProps: {
-          item: item
+          item: item,
         },
       })
       .then((modal) => {
@@ -139,7 +146,7 @@ export class LogPage implements OnInit {
     // bring up the add box
     this.modalCtrl
       .create({
-        component: AddLogModal,
+        component: LogItemModal,
         // cssClass: 'addlog-modal auto-height',
         componentProps: {
           // editMode: editMode,
@@ -157,7 +164,7 @@ export class LogPage implements OnInit {
     if (value.data && value.data.saved) {
       this.toastCtrl
         .create({
-          header: value.data.msg || 'Successfully saved!',
+          header: value.data.msg || "Successfully saved!",
           duration: 3000,
           buttons: [
             {
@@ -215,14 +222,14 @@ export class LogPage implements OnInit {
   loadMore() {
     if (this.dataList.length < 1) return;
     let last = this.dataList[this.dataList.length - 1].data.time;
-    console.dir(last);
-    this.logData.getStream(last, 10).subscribe((qs) => {
-      console.log("loadMore returned: ");
-      console.log(qs.docs);
-      qs.docs.forEach((doc) => {
-        this.addDoc(doc);
+    let tmpList = [];
+    this.logData.getStream(this.queryText, last, 10).subscribe((docs) => {
+      docs.forEach((doc) => {
+        tmpList.push(this.prepDoc(doc));
       });
-      if (qs.size === 10) {
+      this.dataList.concat(tmpList);
+      this.prepList(this.dataList);
+      if (docs.length === 10) {
         this.infiniteScroll.complete();
       } else {
         this.infiniteScroll.disabled = true;

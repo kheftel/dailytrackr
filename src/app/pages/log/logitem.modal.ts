@@ -24,11 +24,11 @@ import "firebase/firestore";
 import { HealthlogData } from "../../providers/healthlog-data";
 
 @Component({
-  selector: "add-modal",
-  templateUrl: "./add.modal.html",
-  styleUrls: ["./add.modal.scss"],
+  selector: "logitem-modal",
+  templateUrl: "./logitem.modal.html",
+  styleUrls: ["./logitem.modal.scss"],
 })
-export class AddLogModal implements OnInit {
+export class LogItemModal implements OnInit {
   formGroup: FormGroup;
 
   @Input() item: any;
@@ -48,6 +48,7 @@ export class AddLogModal implements OnInit {
 
       let formInitData: any = {
         time: [data.time.toDate().toISOString()],
+        notes: [data.notes || ""],
       };
 
       let mitigations = [];
@@ -78,6 +79,7 @@ export class AddLogModal implements OnInit {
           }),
         ]),
         mitigations: this.formBuilder.array([this.formBuilder.control("")]),
+        notes: [""],
       });
     }
   }
@@ -116,8 +118,12 @@ export class AddLogModal implements OnInit {
     console.log(this.formGroup.value);
 
     let data: any = {
+      time: roundToNearestMinutes(new Date(this.formGroup.value.time), {
+        nearestTo: 1,
+      }),
       symptoms: {},
       mitigations: [],
+      notes: this.formGroup.value.notes,
     };
     for (const symptom of this.formGroup.value.symptoms) {
       if (symptom.name) data.symptoms[symptom.name] = symptom.value;
@@ -125,22 +131,36 @@ export class AddLogModal implements OnInit {
     for (const mitigation of this.formGroup.value.mitigations) {
       if (mitigation) data.mitigations.push(mitigation);
     }
-    data.time = roundToNearestMinutes(new Date(this.formGroup.value.time), {
-      nearestTo: 1,
-    });
 
     if (this.item) {
       this.logData.updateLogItem(this.item.id, data).then(() => {
         this.modalCtrl.dismiss({
           saved: true,
-          msg: 'Successfully updated entry ' + format(data.time, "yyyy-MM-dd h:mm a")
+          msg:
+            "Successfully updated entry " +
+            format(data.time, "yyyy-MM-dd h:mm a"),
         });
       });
     } else {
       this.logData.addLogItem(data).then(() => {
         this.modalCtrl.dismiss({
           saved: true,
-          msg: 'Successfully added new entry ' + format(data.time, "yyyy-MM-dd h:mm a")
+          msg:
+            "Successfully added new entry " +
+            format(data.time, "yyyy-MM-dd h:mm a"),
+        });
+      });
+    }
+  }
+
+  onDeleteClick() {
+    if (this.item) {
+      this.logData.deleteLogItem(this.item.id).then(() => {
+        this.modalCtrl.dismiss({
+          saved: true,
+          msg:
+            "Successfully deleted entry " +
+            format(new Date(this.formGroup.value.time), "yyyy-MM-dd h:mm a"),
         });
       });
     }

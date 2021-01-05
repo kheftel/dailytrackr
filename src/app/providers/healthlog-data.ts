@@ -9,6 +9,7 @@ import { UserData } from "./user-data";
 
 import firebase from "firebase/app";
 import "firebase/firestore";
+import { Key } from "protractor";
 
 @Injectable({
   providedIn: "root",
@@ -38,20 +39,66 @@ export class HealthlogData {
     //   });
   }
 
-  getStream(startAfter?: any, max: number = 10) {
+  getStream(queryText = "", startAfter?: any, max: number = 10) {
     let qFn: QueryFn = startAfter
-      ? (ref) => ref.orderBy("time", 'desc').startAfter(startAfter).limit(max)
-      : (ref) => ref.orderBy("time", 'desc').limit(max);
+      ? (ref) => ref.orderBy("time", "desc").startAfter(startAfter).limit(max)
+      : (ref) => ref.orderBy("time", "desc").limit(max);
 
-    return this.firestore.collection("healthlog", qFn).get();
+    return this.firestore
+      .collection("healthlog", qFn)
+      .get()
+      .pipe(
+        map((qs) => {
+          queryText = queryText.toLowerCase().replace(/,|\.|-/g, " ");
+          const queryWords = queryText
+            .split(" ")
+            .filter((w) => !!w.trim().length);
+
+          return qs.docs.filter((doc) => {
+            if (queryWords.length === 0) return true;
+
+            let matches = false;
+            let symptoms = doc.data().symptoms;
+            let mitigations = doc.data().mitigations;
+            let time = format(doc.data().time.toDate(), "yyyy-MM-dd h:mm a");
+            let notes = doc.data().notes || '';
+            queryWords.forEach((word) => {
+              for (const key in symptoms) {
+                if (key.toLowerCase().indexOf(word) > -1) {
+                  matches = true;
+                  return;
+                }
+              }
+              for (const mitigation of mitigations) {
+                if (mitigation.toLowerCase().indexOf(word) > -1) {
+                  matches = true;
+                  return;
+                }
+              }
+              if (time.toLowerCase().indexOf(word) > -1) {
+                matches = true;
+              }
+              if (notes.toLowerCase().indexOf(word) > -1) {
+                matches = true;
+              }
+            });
+
+            return matches;
+          });
+        })
+      );
   }
 
-  addLogItem(data:any) {
-    return this.firestore.collection('healthlog').add(data);
+  addLogItem(data: any) {
+    return this.firestore.collection("healthlog").add(data);
   }
 
-  updateLogItem(id:string, data:any) {
-    return this.firestore.doc('healthlog/' + id).update(data);
+  updateLogItem(id: string, data: any) {
+    return this.firestore.doc("healthlog/" + id).update(data);
+  }
+
+  deleteLogItem(id:string) {
+    return this.firestore.doc('healthlog/' + id).delete();
   }
 
   getDateKey(date?: string) {
