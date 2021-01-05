@@ -39,6 +39,26 @@ export class HealthlogData {
     //   });
   }
 
+  /**
+   * get one previous log entry
+   * @param time the timestamp to look before
+   */
+  getPrevious(time: firebase.firestore.Timestamp) {
+    let qFn: QueryFn = (ref) =>
+      ref.orderBy("time", "desc").startAfter(time).limit(1);
+
+    return this.firestore
+      .collection("healthlog", qFn)
+      .get()
+      .pipe(
+        map((qs) => {
+          if(qs.size === 1)
+            return qs.docs[0];
+          return null;
+        })
+      );
+  }
+
   getStream(queryText = "", startAfter?: any, max: number = 10) {
     let qFn: QueryFn = startAfter
       ? (ref) => ref.orderBy("time", "desc").startAfter(startAfter).limit(max)
@@ -61,7 +81,7 @@ export class HealthlogData {
             let symptoms = doc.data().symptoms;
             let mitigations = doc.data().mitigations;
             let time = format(doc.data().time.toDate(), "yyyy-MM-dd h:mm a");
-            let notes = doc.data().notes || '';
+            let notes = doc.data().notes || "";
             queryWords.forEach((word) => {
               for (const key in symptoms) {
                 if (key.toLowerCase().indexOf(word) > -1) {
@@ -97,8 +117,8 @@ export class HealthlogData {
     return this.firestore.doc("healthlog/" + id).update(data);
   }
 
-  deleteLogItem(id:string) {
-    return this.firestore.doc('healthlog/' + id).delete();
+  deleteLogItem(id: string) {
+    return this.firestore.doc("healthlog/" + id).delete();
   }
 
   getDateKey(date?: string) {

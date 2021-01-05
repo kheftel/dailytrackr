@@ -9,7 +9,7 @@ import {
   NG_VALUE_ACCESSOR,
   Validators,
 } from "@angular/forms";
-import { ModalController } from "@ionic/angular";
+import { AlertController, ModalController } from "@ionic/angular";
 
 import {
   add,
@@ -35,17 +35,22 @@ export class LogItemModal implements OnInit {
 
   constructor(
     private modalCtrl: ModalController,
+    private alertCtrl: AlertController,
     private formBuilder: FormBuilder,
     private logData: HealthlogData
   ) {}
 
   ngOnInit(): void {
+    let d_now = new Date();
+    let t_now = firebase.firestore.Timestamp.fromDate(d_now);
+
     if (this.item) {
       console.log("modal edit mode");
       console.log(this.item);
 
       let data = this.item.data;
 
+      // construct the object to build the formgroup with from the passed-in data
       let formInitData: any = {
         time: [data.time.toDate().toISOString()],
         notes: [data.notes || ""],
@@ -68,10 +73,11 @@ export class LogItemModal implements OnInit {
       }
       formInitData.symptoms = this.formBuilder.array(symptoms);
 
+      // build the form
       this.formGroup = this.formBuilder.group(formInitData);
     } else {
       this.formGroup = this.formBuilder.group({
-        time: [new Date().toISOString()],
+        time: [d_now.toISOString()],
         symptoms: this.formBuilder.array([
           this.formBuilder.group({
             name: [""],
@@ -90,6 +96,65 @@ export class LogItemModal implements OnInit {
 
   get mitigations() {
     return this.formGroup.get("mitigations") as FormArray;
+  }
+
+  clickCopyFromPrevious(which: string) {
+    let time = firebase.firestore.Timestamp.fromDate(
+      new Date(this.formGroup.value.time)
+    );
+    this.logData.getPrevious(time).subscribe((doc) => {
+      if (doc) {
+        console.log("previous entry: " + doc.id);
+        console.log(doc.data());
+
+        if (which === "symptoms") {
+          let symptoms = doc.data().symptoms;
+          let symptomString = "<br />";
+          Object.keys(symptoms).forEach((key) => {
+            symptomString += "<br />" + key + ": " + symptoms[key];
+          });
+          this.alertCtrl
+            .create({
+              message: "Replace symptoms with this data?" + symptomString,
+              buttons: [
+                {
+                  text: "Yes",
+                  handler: (v) => {
+                    this.replaceSymptomsFromDoc(doc);
+                    console.log(v);
+                  },
+                },
+                {
+                  text: "No",
+                  role: "cancel",
+                },
+              ],
+            })
+            .then((alert) => alert.present());
+        }
+      } else {
+        console.log("no previous entry found");
+        this.alertCtrl
+          .create({
+            message: "No previous log entry found",
+            buttons: ["Ok"],
+          })
+          .then((alert) => alert.present());
+      }
+    });
+  }
+
+  replaceSymptomsFromDoc(doc) {
+    let symptoms = doc.data().symptoms;
+    this.symptoms.clear();
+    Object.keys(symptoms).forEach((key) => {
+      this.symptoms.push(
+        this.formBuilder.group({
+          name: [key],
+          value: [symptoms[key]],
+        })
+      );
+    });
   }
 
   clickAddSymptom() {

@@ -22,7 +22,10 @@
           <h2>Symptoms:</h2>
         </ion-label>
         <ion-button (click)="clickAddSymptom()">
-          <ion-icon name="add"></ion-icon>Add Symptom
+          <ion-icon slot="start" name="add"></ion-icon>Add Symptom
+        </ion-button>
+        <ion-button (click)="clickCopyFromPrevious('symptoms')">
+          <ion-icon name="copy" slot="start"></ion-icon>Copy from previous log
         </ion-button>
       </ion-item>
 
