@@ -52,8 +52,7 @@ export class HealthlogData {
       .get()
       .pipe(
         map((qs) => {
-          if(qs.size === 1)
-            return qs.docs[0];
+          if (qs.size === 1) return qs.docs[0];
           return null;
         })
       );
@@ -69,7 +68,7 @@ export class HealthlogData {
       .get()
       .pipe(
         map((qs) => {
-          if(qs.size === 0) return [];
+          if (qs.size === 0) return [];
 
           queryText = queryText.toLowerCase().replace(/,|\.|-/g, " ");
           const queryWords = queryText

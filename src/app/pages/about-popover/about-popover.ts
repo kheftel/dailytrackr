@@ -1,11 +1,14 @@
-import { Component } from '@angular/core';
+import { Component } from "@angular/core";
 
-import { PopoverController } from '@ionic/angular';
+import { PopoverController } from "@ionic/angular";
 
 @Component({
   template: `
     <ion-list>
-      <ion-item button (click)="close('https://ionicframework.com/getting-started')">
+      <ion-item
+        button
+        (click)="close('https://ionicframework.com/getting-started')"
+      >
         <ion-label>Learn Ionic</ion-label>
       </ion-item>
       <ion-item button (click)="close('https://ionicframework.com/docs/')">
@@ -21,7 +24,7 @@ import { PopoverController } from '@ionic/angular';
         <ion-label>Support</ion-label>
       </ion-item>
     </ion-list>
-  `
+  `,
 })
 export class PopoverPage {
   constructor(public popoverCtrl: PopoverController) {}
@@ -32,7 +35,7 @@ export class PopoverPage {
   }
 
   close(url: string) {
-    window.open(url, '_blank');
+    window.open(url, "_blank");
     this.popoverCtrl.dismiss();
   }
 }

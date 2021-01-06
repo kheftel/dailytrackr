@@ -1,21 +1,18 @@
-import { Injectable } from '@angular/core';
-import { Storage } from '@ionic/storage';
-
+import { Injectable } from "@angular/core";
+import { Storage } from "@ionic/storage";
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root",
 })
 export class UserData {
   favorites: string[] = [];
-  HAS_LOGGED_IN = 'hasLoggedIn';
-  HAS_SEEN_TUTORIAL = 'hasSeenTutorial';
+  HAS_LOGGED_IN = "hasLoggedIn";
+  HAS_SEEN_TUTORIAL = "hasSeenTutorial";
 
-  constructor(
-    public storage: Storage
-  ) { }
+  constructor(public storage: Storage) {}
 
   hasFavorite(sessionName: string): boolean {
-    return (this.favorites.indexOf(sessionName) > -1);
+    return this.favorites.indexOf(sessionName) > -1;
   }
 
   addFavorite(sessionName: string): void {
@@ -32,31 +29,34 @@ export class UserData {
   login(username: string): Promise<any> {
     return this.storage.set(this.HAS_LOGGED_IN, true).then(() => {
       this.setUsername(username);
-      return window.dispatchEvent(new CustomEvent('user:login'));
+      return window.dispatchEvent(new CustomEvent("user:login"));
     });
   }
 
   signup(username: string): Promise<any> {
     return this.storage.set(this.HAS_LOGGED_IN, true).then(() => {
       this.setUsername(username);
-      return window.dispatchEvent(new CustomEvent('user:signup'));
+      return window.dispatchEvent(new CustomEvent("user:signup"));
     });
   }
 
   logout(): Promise<any> {
-    return this.storage.remove(this.HAS_LOGGED_IN).then(() => {
-      return this.storage.remove('username');
-    }).then(() => {
-      window.dispatchEvent(new CustomEvent('user:logout'));
-    });
+    return this.storage
+      .remove(this.HAS_LOGGED_IN)
+      .then(() => {
+        return this.storage.remove("username");
+      })
+      .then(() => {
+        window.dispatchEvent(new CustomEvent("user:logout"));
+      });
   }
 
   setUsername(username: string): Promise<any> {
-    return this.storage.set('username', username);
+    return this.storage.set("username", username);
   }
 
   getUsername(): Promise<string> {
-    return this.storage.get('username').then((value) => {
+    return this.storage.get("username").then((value) => {
       return value;
     });
   }

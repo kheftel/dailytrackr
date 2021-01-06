@@ -1,29 +1,34 @@
-import { Component } from '@angular/core';
+import { Component } from "@angular/core";
 
-import { ConferenceData } from '../../providers/conference-data';
-import { ActivatedRoute } from '@angular/router';
-import { UserData } from '../../providers/user-data';
+import { ConferenceData } from "../../providers/conference-data";
+import { ActivatedRoute } from "@angular/router";
+import { UserData } from "../../providers/user-data";
 
 @Component({
-  selector: 'page-session-detail',
-  styleUrls: ['./session-detail.scss'],
-  templateUrl: 'session-detail.html'
+  selector: "page-session-detail",
+  styleUrls: ["./session-detail.scss"],
+  templateUrl: "session-detail.html",
 })
 export class SessionDetailPage {
   session: any;
   isFavorite = false;
-  defaultHref = '';
+  defaultHref = "";
 
   constructor(
     private dataProvider: ConferenceData,
     private userProvider: UserData,
     private route: ActivatedRoute
-  ) { }
+  ) {}
 
   ionViewWillEnter() {
     this.dataProvider.load().subscribe((data: any) => {
-      if (data && data.schedule && data.schedule[0] && data.schedule[0].groups) {
-        const sessionId = this.route.snapshot.paramMap.get('sessionId');
+      if (
+        data &&
+        data.schedule &&
+        data.schedule[0] &&
+        data.schedule[0].groups
+      ) {
+        const sessionId = this.route.snapshot.paramMap.get("sessionId");
         for (const group of data.schedule[0].groups) {
           if (group && group.sessions) {
             for (const session of group.sessions) {
@@ -48,7 +53,7 @@ export class SessionDetailPage {
   }
 
   sessionClick(item: string) {
-    console.log('Clicked', item);
+    console.log("Clicked", item);
   }
 
   toggleFavorite() {
@@ -62,6 +67,6 @@ export class SessionDetailPage {
   }
 
   shareSession() {
-    console.log('Clicked share session');
+    console.log("Clicked share session");
   }
 }

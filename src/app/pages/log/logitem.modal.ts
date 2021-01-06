@@ -33,6 +33,22 @@ export class LogItemModal implements OnInit {
 
   @Input() item: any;
 
+  validationMessages = {
+    startTime: [
+      { type: "nopast", message: "Start time cannot be in the past." },
+    ],
+    endTime: [
+      {
+        type: "nopast",
+        message: "End time cannot be in the past.",
+      },
+      {
+        type: "nostart",
+        message: "End time cannot be the same as or before start time.",
+      },
+    ],
+  };
+
   constructor(
     private modalCtrl: ModalController,
     private alertCtrl: AlertController,
@@ -41,8 +57,8 @@ export class LogItemModal implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    let d_now = new Date();
-    let t_now = firebase.firestore.Timestamp.fromDate(d_now);
+    let dNow = new Date();
+    let tNow = firebase.firestore.Timestamp.fromDate(dNow);
 
     if (this.item) {
       console.log("modal edit mode");
@@ -77,7 +93,7 @@ export class LogItemModal implements OnInit {
       this.formGroup = this.formBuilder.group(formInitData);
     } else {
       this.formGroup = this.formBuilder.group({
-        time: [d_now.toISOString()],
+        time: [dNow.toISOString()],
         symptoms: this.formBuilder.array([
           this.formBuilder.group({
             name: [""],
@@ -331,22 +347,6 @@ export class LogItemModal implements OnInit {
   //       nearestTo: this.granularity,
   //     });
   //   }
-
-  validation_messages = {
-    startTime: [
-      { type: "nopast", message: "Start time cannot be in the past." },
-    ],
-    endTime: [
-      {
-        type: "nopast",
-        message: "End time cannot be in the past.",
-      },
-      {
-        type: "nostart",
-        message: "End time cannot be the same as or before start time.",
-      },
-    ],
-  };
 
   dismiss() {
     this.modalCtrl.dismiss({

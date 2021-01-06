@@ -1,17 +1,17 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { NgModule } from "@angular/core";
+import { RouterModule, Routes } from "@angular/router";
 
-import { LogPage } from './log';
+import { LogPage } from "./log";
 
 const routes: Routes = [
   {
-    path: '',
-    component: LogPage
-  }
+    path: "",
+    component: LogPage,
+  },
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class LogPageRoutingModule { }
+export class LogPageRoutingModule {}

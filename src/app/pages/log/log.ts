@@ -170,7 +170,7 @@ export class LogPage implements OnInit, AfterViewInit {
         let lastItem = list[i - 1];
         let curDate = this.formatDate(item.data.time);
         let lastDate = this.formatDate(lastItem.data.time);
-        item.showDatetime = curDate != lastDate;
+        item.showDatetime = curDate !== lastDate;
       } else {
         item.showDatetime = true;
       }
