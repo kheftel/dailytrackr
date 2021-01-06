@@ -85,6 +85,16 @@ ion-item-divider.date {
   white-space: normal;
 }
 
+.loading ion-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-disabled {
+  opacity: 0.5;
+}
+
 ion-infinite-scroll {
   // attempt to trick the scroller into trying to
   // load more when it's not tall enough to require scrolling?

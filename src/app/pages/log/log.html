@@ -51,8 +51,8 @@
   </ion-header>
 
   <ion-list lines="none" #logList *ngIf="dataList && dataList.length > 0">
-    <ng-container *ngFor="let item of dataList">
 
+    <ng-container *ngFor="let item of dataList">
       <ng-container *ngIf="item.showDatetime">
         <ion-item-divider color="primary" class="date" sticky>
           <ion-label>
@@ -60,6 +60,7 @@
           </ion-label>
         </ion-item-divider>
       </ng-container>
+
       <ion-item-divider>
         <ion-label>
           <h3>{{formatTime(item.data.time)}}</h3>
@@ -88,13 +89,27 @@
           </ng-container>
         </ion-label>
       </ion-item>
+
     </ng-container>
+
+    <ion-item class="loading" button color="primary" [disabled]="loading" (click)="handleInfiniteScroll()"  *ngIf="!noMoreData">
+      <ion-label>
+        <ng-container *ngIf="!loading">
+          <p>Load More</p>
+        </ng-container>
+        <ng-container *ngIf="loading">
+          <p>Loading...</p>
+          <!-- <ion-spinner style="margin-left: 10px;"></ion-spinner> -->
+        </ng-container>
+      </ion-label>
+    </ion-item>
+
   </ion-list>
 
-  <ion-infinite-scroll threshold="100px" #infiniteScroll id="infiniteScroll" (ionInfinite)="handleInfiniteScroll()">
+  <!-- <ion-infinite-scroll threshold="100px" #infiniteScroll id="infiniteScroll" (ionInfinite)="handleInfiniteScroll()">
     <ion-infinite-scroll-content loading-spinner="bubbles" loading-text="Loading more data...">
     </ion-infinite-scroll-content>
-  </ion-infinite-scroll>
+  </ion-infinite-scroll> -->
 
 
   <!-- <ion-list-header [hidden]="list.length === 0">

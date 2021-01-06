@@ -58,6 +58,8 @@ export class LogPage implements OnInit, AfterViewInit {
   dataList: any[] = [];
 
   batchSize: number = 5;
+  loading: boolean = false;
+  noMoreData: boolean = false;
 
   constructor(
     public alertCtrl: AlertController,
@@ -95,10 +97,24 @@ export class LogPage implements OnInit, AfterViewInit {
 
     let tmpList = [];
     if (this.infiniteScroll) this.infiniteScroll.disabled = false;
+    this.noMoreData = false;
+    this.loading = true;
     this.logData
       .getStream(this.queryText, null, this.batchSize)
       .subscribe((docs) => {
+        this.loading = false;
         // first batch of items is loaded
+
+        // no more? disable
+        if (docs.length === 0) {
+          if (this.infiniteScroll) {
+            this.infiniteScroll.complete();
+            this.infiniteScroll.disabled = true;
+          }
+          this.noMoreData = true;
+          return;
+        }
+
         console.log("loaded " + docs.length);
         docs.forEach((doc) => {
           tmpList.push(this.prepDoc(doc));
@@ -108,7 +124,10 @@ export class LogPage implements OnInit, AfterViewInit {
         console.log("data list length = " + this.dataList.length);
 
         // make it load more if needed because of a bug in infinite scroll
-        this.checkContentTooShortToScroll();
+        if (this.infiniteScroll) {
+          this.infiniteScroll.complete();
+          this.checkContentTooShortToScroll();
+        }
       });
 
     // this.dataList$ = this.logData.getDayList();
@@ -131,6 +150,7 @@ export class LogPage implements OnInit, AfterViewInit {
   }
 
   checkContentTooShortToScroll() {
+    if (!this.infiniteScroll) return;
     // wait one tick to let list height update
     setTimeout(() => {
       let scrollHeight = this.scrollElement.scrollHeight;
@@ -265,8 +285,7 @@ export class LogPage implements OnInit, AfterViewInit {
   }
 
   handleInfiniteScroll() {
-    if (!this.infiniteScroll) return;
-    if (this.infiniteScroll.disabled) {
+    if (this.infiniteScroll && this.infiniteScroll.disabled) {
       return;
     }
 
@@ -277,15 +296,20 @@ export class LogPage implements OnInit, AfterViewInit {
         ? this.dataList[this.dataList.length - 1].data.time
         : null;
     let tmpList = [];
+    this.loading = true;
     this.logData
       .getStream(this.queryText, last, this.batchSize)
       .subscribe((docs) => {
+        this.loading = false;
         console.log("loaded " + docs.length);
 
         // no more? disable
         if (docs.length === 0) {
-          this.infiniteScroll.complete();
-          this.infiniteScroll.disabled = true;
+          if (this.infiniteScroll) {
+            this.infiniteScroll.complete();
+            this.infiniteScroll.disabled = true;
+          }
+          this.noMoreData = true;
           return;
         }
 
@@ -296,8 +320,10 @@ export class LogPage implements OnInit, AfterViewInit {
         this.dataList = this.dataList.concat(tmpList);
         this.prepList(this.dataList);
         console.log("data list length = " + this.dataList.length);
-        this.infiniteScroll.complete();
-        this.checkContentTooShortToScroll();
+        if (this.infiniteScroll) {
+          this.infiniteScroll.complete();
+          this.checkContentTooShortToScroll();
+        }
       });
   }
 
