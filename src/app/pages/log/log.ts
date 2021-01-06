@@ -84,9 +84,6 @@ export class LogPage implements OnInit, AfterViewInit {
     });
 
     this.refreshDataList();
-
-    // let el = document.getElementById('ionInfinite');
-    // console.log(el);
   }
 
   refreshDataList() {
