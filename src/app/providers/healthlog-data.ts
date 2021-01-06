@@ -69,6 +69,8 @@ export class HealthlogData {
       .get()
       .pipe(
         map((qs) => {
+          if(qs.size === 0) return [];
+
           queryText = queryText.toLowerCase().replace(/,|\.|-/g, " ");
           const queryWords = queryText
             .split(" ")

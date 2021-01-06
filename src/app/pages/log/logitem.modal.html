@@ -6,9 +6,8 @@
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
-<ion-content class="inner-content">
+<ion-content>
   <form [formGroup]="formGroup">
-
     <ion-list>
       <ion-item>
         <ion-label>Time:</ion-label>
@@ -16,8 +15,8 @@
       </ion-item>
     </ion-list>
 
-    <ion-list formArrayName="symptoms" lines="none">
-      <ion-item>
+    <ion-list formArrayName="symptoms">
+      <ion-item lines="none">
         <ion-label>
           <h2>Symptoms:</h2>
         </ion-label>
@@ -35,13 +34,13 @@
             <ion-label>Symptom {{i+1}}</ion-label>
             <ion-button slot="end" (click)="deleteSymptom(i)">Delete</ion-button>
           </ion-item> -->
-          <ion-item lines="none">
+          <ion-item>
             <ion-label>Name:</ion-label>
             <ion-input formControlName="name" placeholder="brainfog, etc..."></ion-input>
             <ion-button slot="end" (click)="deleteSymptom(i)">Delete</ion-button>
 
           </ion-item>
-          <ion-item lines="none">
+          <ion-item>
             <ion-label>Value:</ion-label>
             <ion-input type="number" formControlName="value" placeholder="1-10"></ion-input>
           </ion-item>
@@ -49,8 +48,8 @@
       </div>
     </ion-list>
 
-    <ion-list formArrayName="mitigations" lines="none">
-      <ion-item>
+    <ion-list formArrayName="mitigations">
+      <ion-item lines="none">
         <ion-label>
           <h2>Mitigations:</h2>
         </ion-label>
@@ -68,8 +67,8 @@
       </ion-item-group>
     </ion-list>
 
-    <ion-list lines="none">
-      <ion-item>
+    <ion-list>
+      <ion-item lines="none">
         <ion-label>
           <h2>Notes:</h2>
         </ion-label>

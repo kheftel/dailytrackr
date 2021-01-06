@@ -1,4 +1,10 @@
-import { Component, ViewChild, OnInit } from "@angular/core";
+import {
+  Component,
+  ViewChild,
+  OnInit,
+  ElementRef,
+  AfterViewInit,
+} from "@angular/core";
 import { Router } from "@angular/router";
 import {
   AlertController,
@@ -9,6 +15,7 @@ import {
   ToastController,
   Config,
   IonInfiniteScroll,
+  IonContent,
 } from "@ionic/angular";
 
 import { ScheduleFilterPage } from "../schedule-filter/schedule-filter";
@@ -27,11 +34,15 @@ import { LogItemModal } from "./logitem.modal";
   templateUrl: "log.html",
   styleUrls: ["./log.scss"],
 })
-export class LogPage implements OnInit {
+export class LogPage implements OnInit, AfterViewInit {
   // Gets a reference to the list element
-  @ViewChild("scheduleList", { static: true }) scheduleList: IonList;
+  @ViewChild("logList", { static: true }) logList: ElementRef;
 
   @ViewChild("infiniteScroll", null) infiniteScroll: IonInfiniteScroll;
+
+  @ViewChild("content", { static: true }) content: IonContent;
+
+  scrollElement: HTMLElement;
 
   ios: boolean;
   dayIndex = 0;
@@ -45,6 +56,8 @@ export class LogPage implements OnInit {
 
   dataList$: Observable<any[]>;
   dataList: any[] = [];
+
+  batchSize: number = 5;
 
   constructor(
     public alertCtrl: AlertController,
@@ -60,26 +73,43 @@ export class LogPage implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.updateSchedule();
-
     this.ios = this.config.get("mode") === "ios";
   }
 
-  updateSchedule() {
-    // Close any open sliding items when the schedule updates
-    if (this.scheduleList) {
-      this.scheduleList.closeSlidingItems();
-    }
+  ngAfterViewInit() {
+    this.content.getScrollElement().then((scroll) => {
+      this.scrollElement = scroll;
+    });
+
+    this.refreshDataList();
+
+    // let el = document.getElementById('ionInfinite');
+    // console.log(el);
+  }
+
+  refreshDataList() {
+    // Close any open sliding items when the list updates
+    // if (this.logList) {
+    //   this.logList.closeSlidingItems();
+    // }
 
     let tmpList = [];
-    this.infiniteScroll.disabled = false;
-    this.logData.getStream(this.queryText, null, 10).subscribe((docs) => {
-      docs.forEach((doc) => {
-        tmpList.push(this.prepDoc(doc));
+    if (this.infiniteScroll) this.infiniteScroll.disabled = false;
+    this.logData
+      .getStream(this.queryText, null, this.batchSize)
+      .subscribe((docs) => {
+        // first batch of items is loaded
+        console.log("loaded " + docs.length);
+        docs.forEach((doc) => {
+          tmpList.push(this.prepDoc(doc));
+        });
+        this.prepList(tmpList);
+        this.dataList = tmpList;
+        console.log("data list length = " + this.dataList.length);
+
+        // make it load more if needed because of a bug in infinite scroll
+        this.checkContentTooShortToScroll();
       });
-      this.prepList(tmpList);
-      this.dataList = tmpList;
-    });
 
     // this.dataList$ = this.logData.getDayList();
 
@@ -100,6 +130,22 @@ export class LogPage implements OnInit {
       });
   }
 
+  checkContentTooShortToScroll() {
+    // wait one tick to let list height update
+    setTimeout(() => {
+      let scrollHeight = this.scrollElement.scrollHeight;
+      let offsetHeight = this.scrollElement.offsetHeight;
+
+      if (scrollHeight > offsetHeight) {
+        // scrolling is enabled
+      } else {
+        // scrolling is disabled, content is too short
+        // load one more batch of docs b/c of infinite scroller bug
+        this.handleInfiniteScroll();
+      }
+    }, 1);
+  }
+
   prepList(list) {
     for (let i = 0; i < list.length; i++) {
       let item = list[i];
@@ -108,8 +154,7 @@ export class LogPage implements OnInit {
         let curDate = this.formatDate(item.data.time);
         let lastDate = this.formatDate(lastItem.data.time);
         item.showDatetime = curDate != lastDate;
-      }
-      else {
+      } else {
         item.showDatetime = true;
       }
     }
@@ -147,7 +192,7 @@ export class LogPage implements OnInit {
     this.modalCtrl
       .create({
         component: LogItemModal,
-        // cssClass: 'addlog-modal auto-height',
+        // cssClass: 'logitem-modal',
         componentProps: {
           // editMode: editMode,
         },
@@ -175,7 +220,7 @@ export class LogPage implements OnInit {
         })
         .then((toast) => {
           toast.present();
-          this.updateSchedule();
+          this.refreshDataList();
         });
     }
   }
@@ -219,26 +264,41 @@ export class LogPage implements OnInit {
     return ret;
   }
 
-  loadMore() {
-    if (this.dataList.length < 1) return;
-    let last = this.dataList[this.dataList.length - 1].data.time;
-    let tmpList = [];
-    this.logData.getStream(this.queryText, last, 10).subscribe((docs) => {
-      docs.forEach((doc) => {
-        tmpList.push(this.prepDoc(doc));
-      });
-      this.dataList.concat(tmpList);
-      this.prepList(this.dataList);
-      if (docs.length === 10) {
-        this.infiniteScroll.complete();
-      } else {
-        this.infiniteScroll.disabled = true;
-      }
-    });
-  }
-
   handleInfiniteScroll() {
-    this.loadMore();
+    if (!this.infiniteScroll) return;
+    if (this.infiniteScroll.disabled) {
+      return;
+    }
+
+    console.log("handleInfiniteScroll");
+
+    let last =
+      this.dataList.length > 0
+        ? this.dataList[this.dataList.length - 1].data.time
+        : null;
+    let tmpList = [];
+    this.logData
+      .getStream(this.queryText, last, this.batchSize)
+      .subscribe((docs) => {
+        console.log("loaded " + docs.length);
+
+        // no more? disable
+        if (docs.length === 0) {
+          this.infiniteScroll.complete();
+          this.infiniteScroll.disabled = true;
+          return;
+        }
+
+        // add loaded documents to list
+        docs.forEach((doc) => {
+          tmpList.push(this.prepDoc(doc));
+        });
+        this.dataList = this.dataList.concat(tmpList);
+        this.prepList(this.dataList);
+        console.log("data list length = " + this.dataList.length);
+        this.infiniteScroll.complete();
+        this.checkContentTooShortToScroll();
+      });
   }
 
   async presentFilter() {
@@ -253,7 +313,7 @@ export class LogPage implements OnInit {
     const { data } = await modal.onWillDismiss();
     if (data) {
       this.excludeTracks = data;
-      this.updateSchedule();
+      this.refreshDataList();
     }
   }
 
@@ -307,7 +367,7 @@ export class LogPage implements OnInit {
           handler: () => {
             // they want to remove this session from their favorites
             this.user.removeFavorite(sessionData.name);
-            this.updateSchedule();
+            this.refreshDataList();
 
             // close the sliding item and hide the option buttons
             slidingItem.close();

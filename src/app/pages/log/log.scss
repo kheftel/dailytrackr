@@ -25,7 +25,8 @@ ion-label {
   margin-bottom: 8px;
 }
 
-h2, h3 {
+h2,
+h3 {
   font-weight: 500;
 }
 
@@ -39,7 +40,7 @@ ion-item {
   }
 
   p {
-    position:relative;
+    position: relative;
     padding-top: 4px;
     padding-bottom: 4px;
     ion-badge {
@@ -49,8 +50,8 @@ ion-item {
       padding-left: 8px;
       padding-right: 8px;
       border-radius: 8px;
-      position:absolute;
-      right:0;
+      position: absolute;
+      right: 0;
     }
   }
 }
@@ -71,12 +72,23 @@ ion-item-divider.date {
   // border-top: 1px solid var(--ion-color-step-150);
 }
 
-.symptom {
+.symptom,
+.notes {
   border-left: 2px solid var(--ion-color-base);
   border-bottom: 1px solid var(--ion-color-base);
   // background: rgba(var(--ion-color-base-rgb), 0.12);
   color: var(--ion-text-color);
   padding-left: 8px;
+}
+
+.notes {
+  white-space: normal;
+}
+
+ion-infinite-scroll {
+  // attempt to trick the scroller into trying to
+  // load more when it's not tall enough to require scrolling?
+  // height: 100vh;
 }
 
 $categories: (

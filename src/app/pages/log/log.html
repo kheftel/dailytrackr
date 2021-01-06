@@ -3,7 +3,7 @@
     <ion-buttons *ngIf="!showSearchbar" slot="start">
       <ion-menu-button></ion-menu-button>
     </ion-buttons>
-    <!-- <ion-segment *ngIf="ios" [(ngModel)]="segment" (ionChange)="updateSchedule()">
+    <!-- <ion-segment *ngIf="ios" [(ngModel)]="segment" (ionChange)="refreshDataList()">
       <ion-segment-button value="all">
         All
       </ion-segment-button>
@@ -12,9 +12,9 @@
       </ion-segment-button>
     </ion-segment> -->
     <ion-title *ngIf="!ios && !showSearchbar">Log</ion-title>
-    <ion-searchbar *ngIf="showSearchbar" showCancelButton="always" [(ngModel)]="queryText" (ionChange)="updateSchedule()" (ionCancel)="showSearchbar=false; queryText=''" placeholder="Search"></ion-searchbar>
+    <ion-searchbar *ngIf="showSearchbar" showCancelButton="always" [(ngModel)]="queryText" (ionChange)="refreshDataList()" (ionCancel)="showSearchbar=false; queryText=''" placeholder="Search"></ion-searchbar>
     <ion-buttons slot="end">
-      <ion-button *ngIf="!showSearchbar" (click)="updateSchedule()">
+      <ion-button *ngIf="!showSearchbar" (click)="refreshDataList()">
         <ion-icon slot="icon-only" name="refresh"></ion-icon>
       </ion-button>
       <ion-button *ngIf="!ios && !showSearchbar" (click)="showSearchbar = true">
@@ -29,7 +29,7 @@
     </ion-buttons>
   </ion-toolbar>
   <!-- <ion-toolbar *ngIf="!ios">
-    <ion-segment [(ngModel)]="segment" (ionChange)="updateSchedule()">
+    <ion-segment [(ngModel)]="segment" (ionChange)="refreshDataList()">
       <ion-segment-button value="all">
         All
       </ion-segment-button>
@@ -40,17 +40,17 @@
   </ion-toolbar> -->
 </ion-header>
 
-<ion-content fullscreen="true">
+<ion-content fullscreen="true" #content>
   <ion-header collapse="condense">
     <ion-toolbar>
       <ion-title size="large">Log</ion-title>
     </ion-toolbar>
     <ion-toolbar>
-      <ion-searchbar [(ngModel)]="queryText" (ionChange)="updateSchedule()" placeholder="Search"></ion-searchbar>
+      <ion-searchbar [(ngModel)]="queryText" (ionChange)="refreshDataList()" placeholder="Search"></ion-searchbar>
     </ion-toolbar>
   </ion-header>
 
-  <ion-list lines="none" #scheduleList *ngIf="dataList && dataList.length > 0">
+  <ion-list lines="none" #logList *ngIf="dataList && dataList.length > 0">
     <ng-container *ngFor="let item of dataList">
 
       <ng-container *ngIf="item.showDatetime">
@@ -82,7 +82,7 @@
 
           <ng-container *ngIf="item.data.notes">
             <h3 style="margin-top:10px">Notes:</h3>
-            <p class="symptom ion-color-medium">
+            <p class="notes ion-color-medium">
               {{item.data.notes}}
             </p>
           </ng-container>
@@ -91,7 +91,7 @@
     </ng-container>
   </ion-list>
 
-  <ion-infinite-scroll threshold="10px" #infiniteScroll (ionInfinite)="handleInfiniteScroll()">
+  <ion-infinite-scroll threshold="100px" #infiniteScroll id="infiniteScroll" (ionInfinite)="handleInfiniteScroll()">
     <ion-infinite-scroll-content loading-spinner="bubbles" loading-text="Loading more data...">
     </ion-infinite-scroll-content>
   </ion-infinite-scroll>
