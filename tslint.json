@@ -10,12 +10,13 @@
   //   "codelyzer"
   // ],
   "rules": {
-    "prefer-const":false,
+    "prefer-const": {"severity": "warning"},
     "curly":false,
     "array-type":false,
     "forin":false,
     "object-literal-shorthand": false,
     "no-for-in-array":true,
+    "no-conditional-assignment": true,
     //   "array-type": false,
     //   "arrow-parens": false,
     //   "deprecation": {

@@ -92,7 +92,7 @@ export class LogPage implements OnInit, AfterViewInit {
     //   this.logList.closeSlidingItems();
     // }
 
-    let tmpList = [];
+    const tmpList = [];
     if (this.infiniteScroll) this.infiniteScroll.disabled = false;
     this.noMoreData = false;
     this.loading = true;
@@ -150,8 +150,8 @@ export class LogPage implements OnInit, AfterViewInit {
     if (!this.infiniteScroll) return;
     // wait one tick to let list height update
     setTimeout(() => {
-      let scrollHeight = this.scrollElement.scrollHeight;
-      let offsetHeight = this.scrollElement.offsetHeight;
+      const scrollHeight = this.scrollElement.scrollHeight;
+      const offsetHeight = this.scrollElement.offsetHeight;
 
       if (scrollHeight > offsetHeight) {
         // scrolling is enabled
@@ -165,11 +165,11 @@ export class LogPage implements OnInit, AfterViewInit {
 
   prepList(list) {
     for (let i = 0; i < list.length; i++) {
-      let item = list[i];
+      const item = list[i];
       if (i > 0) {
-        let lastItem = list[i - 1];
-        let curDate = this.formatDate(item.data.time);
-        let lastDate = this.formatDate(lastItem.data.time);
+        const lastItem = list[i - 1];
+        const curDate = this.formatDate(item.data.time);
+        const lastDate = this.formatDate(lastItem.data.time);
         item.showDatetime = curDate !== lastDate;
       } else {
         item.showDatetime = true;
@@ -178,7 +178,7 @@ export class LogPage implements OnInit, AfterViewInit {
   }
 
   prepDoc(doc) {
-    let item: any = {
+    const item: any = {
       data: doc.data(),
       ref: doc.ref,
       id: doc.id,
@@ -265,9 +265,9 @@ export class LogPage implements OnInit, AfterViewInit {
   }
 
   prepSymptoms(symptoms: any) {
-    let ret = [];
+    const ret = [];
     for (const key of this.keys(symptoms)) {
-      let item: any = {};
+      const item: any = {};
       item.value = symptoms[key];
       item.name = key;
       item.severity = "";
@@ -288,11 +288,11 @@ export class LogPage implements OnInit, AfterViewInit {
 
     console.log("handleInfiniteScroll");
 
-    let last =
+    const last =
       this.dataList.length > 0
         ? this.dataList[this.dataList.length - 1].data.time
         : null;
-    let tmpList = [];
+    const tmpList = [];
     this.loading = true;
     this.logData
       .getStream(this.queryText, last, this.batchSize)

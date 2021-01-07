@@ -44,7 +44,7 @@ export class HealthlogData {
    * @param time the timestamp to look before
    */
   getPrevious(time: firebase.firestore.Timestamp) {
-    let qFn: QueryFn = (ref) =>
+    const qFn: QueryFn = (ref) =>
       ref.orderBy("time", "desc").startAfter(time).limit(1);
 
     return this.firestore
@@ -59,7 +59,7 @@ export class HealthlogData {
   }
 
   getStream(queryText = "", startAfter?: any, max: number = 10) {
-    let qFn: QueryFn = startAfter
+    const qFn: QueryFn = startAfter
       ? (ref) => ref.orderBy("time", "desc").startAfter(startAfter).limit(max)
       : (ref) => ref.orderBy("time", "desc").limit(max);
 
@@ -79,10 +79,10 @@ export class HealthlogData {
             if (queryWords.length === 0) return true;
 
             let matches = false;
-            let symptoms = doc.data().symptoms;
-            let mitigations = doc.data().mitigations;
-            let time = format(doc.data().time.toDate(), "yyyy-MM-dd h:mm a");
-            let notes = doc.data().notes || "";
+            const symptoms = doc.data().symptoms;
+            const mitigations = doc.data().mitigations;
+            const time = format(doc.data().time.toDate(), "yyyy-MM-dd h:mm a");
+            const notes = doc.data().notes || "";
             queryWords.forEach((word) => {
               for (const key in symptoms) {
                 if (key.toLowerCase().indexOf(word) > -1) {
@@ -131,7 +131,7 @@ export class HealthlogData {
   }
 
   loadDate(date?: string) {
-    let key: string = this.getDateKey(date);
+    const key: string = this.getDateKey(date);
     if (this.healthlogData[key]) {
       return this.healthlogData[key];
     } else {
@@ -218,9 +218,9 @@ export class HealthlogData {
   }
 
   processDayList(list) {
-    let processed: any[] = [];
+    const processed: any[] = [];
     for (const item of list) {
-      let processedItem: any = { ...item };
+      const processedItem: any = { ...item };
       for (const key in item) {
         // convert firebase timestamps to js dates
         if (item[key] instanceof firebase.firestore.Timestamp) {

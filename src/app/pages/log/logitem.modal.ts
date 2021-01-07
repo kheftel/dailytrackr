@@ -57,28 +57,28 @@ export class LogItemModal implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    let dNow = new Date();
-    let tNow = firebase.firestore.Timestamp.fromDate(dNow);
+    const dNow = new Date();
+    const tNow = firebase.firestore.Timestamp.fromDate(dNow);
 
     if (this.item) {
       console.log("modal edit mode");
       console.log(this.item);
 
-      let data = this.item.data;
+      const data = this.item.data;
 
       // construct the object to build the formgroup with from the passed-in data
-      let formInitData: any = {
+      const formInitData: any = {
         time: [data.time.toDate().toISOString()],
         notes: [data.notes || ""],
       };
 
-      let mitigations = [];
+      const mitigations = [];
       for (const mitigation of data.mitigations) {
         mitigations.push(this.formBuilder.control(mitigation));
       }
       formInitData.mitigations = this.formBuilder.array(mitigations);
 
-      let symptoms = [];
+      const symptoms = [];
       for (const key in data.symptoms) {
         symptoms.push(
           this.formBuilder.group({
@@ -115,7 +115,7 @@ export class LogItemModal implements OnInit {
   }
 
   clickCopyFromPrevious(which: string) {
-    let time = firebase.firestore.Timestamp.fromDate(
+    const time = firebase.firestore.Timestamp.fromDate(
       new Date(this.formGroup.value.time)
     );
     this.logData.getPrevious(time).subscribe((doc) => {
@@ -124,7 +124,7 @@ export class LogItemModal implements OnInit {
         console.log(doc.data());
 
         if (which === "symptoms") {
-          let symptoms = doc.data().symptoms;
+          const symptoms = doc.data().symptoms;
           let symptomString = "<br />";
           Object.keys(symptoms).forEach((key) => {
             symptomString += "<br />" + key + ": " + symptoms[key];
@@ -161,7 +161,7 @@ export class LogItemModal implements OnInit {
   }
 
   replaceSymptomsFromDoc(doc) {
-    let symptoms = doc.data().symptoms;
+    const symptoms = doc.data().symptoms;
     this.symptoms.clear();
     Object.keys(symptoms).forEach((key) => {
       this.symptoms.push(
@@ -198,7 +198,7 @@ export class LogItemModal implements OnInit {
   onSaveClick() {
     console.log(this.formGroup.value);
 
-    let data: any = {
+    const data: any = {
       time: roundToNearestMinutes(new Date(this.formGroup.value.time), {
         nearestTo: 1,
       }),
