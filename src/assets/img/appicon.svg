@@ -1,0 +1,137 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="none" x="0px" y="0px" width="1024px" height="1024px" viewBox="0 0 1024 1024">
+<defs>
+<g id="Layer1_0_FILL">
+<path fill="#444444" stroke="none" d="
+M 2161.1 -22.4
+L 1649.1 -22.4
+Q 1543.05 -22.4 1468.05 52.55 1393.1 127.55 1393.1 233.6
+L 1393.1 745.6
+Q 1393.1 851.65 1468.05 926.6 1543.05 1001.6 1649.1 1001.6
+L 2161.1 1001.6
+Q 2267.15 1001.6 2342.1 926.6 2417.1 851.65 2417.1 745.6
+L 2417.1 233.6
+Q 2417.1 127.55 2342.1 52.55 2267.15 -22.4 2161.1 -22.4 Z"/>
+</g>
+
+<g id="Mask_appicon_svg_Layer_1__Clip_Group__0_2_MASK_0_FILL">
+<path fill="#FFFFFF" stroke="none" d="
+M 215 0
+L 215 1024 1239 1024 1239 0 215 0 Z"/>
+</g>
+
+<g id="appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_0_FILL">
+<path fill="#169587" stroke="none" d="
+M 37.4 432
+L 1 467.95 386.6 849 423 813.1 37.4 432 Z"/>
+</g>
+
+<g id="appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_1_FILL">
+<path fill="#169587" stroke="none" d="
+M 1414.4 572
+L 1453 553.75 1011.55 140 973 158.3 1414.4 572 Z"/>
+</g>
+
+<g id="appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_2_FILL">
+<path fill="#169587" stroke="none" d="
+M 1033.95 149.4
+L 974.9 93 412 780.65 471.05 837 1033.95 149.4 Z"/>
+</g>
+
+<g id="appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_3_FILL">
+<path fill="#00BC8C" stroke="none" d="
+M 392.6 750.55
+Q 375.4 757.85 362.1 771.15 348.8 784.4 341.55 801.65 334 819.5 334 839 334 858.55 341.55 876.4 348.8 893.6 362.1 906.9 375.4 920.2 392.6 927.45 410.45 935 430 935 449.55 935 467.35 927.45 484.6 920.15 497.9 906.9 511.15 893.6 518.45 876.4 526 858.55 526 839 526 819.5 518.45 801.65 511.15 784.4 497.9 771.15 484.6 757.85 467.35 750.55 449.5 743 430 743 410.45 743 392.6 750.55 Z"/>
+</g>
+
+<g id="appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_4_FILL">
+<path fill="#00BC8C" stroke="none" d="
+M 1031.35 75.55
+Q 1013.5 68 994 68 974.45 68 956.6 75.55 939.4 82.85 926.1 96.15 912.8 109.4 905.55 126.65 898 144.5 898 164 898 183.55 905.55 201.4 912.8 218.6 926.1 231.9 939.4 245.2 956.6 252.45 974.45 260 994 260 1013.55 260 1031.35 252.45 1048.6 245.15 1061.9 231.9 1075.15 218.6 1082.45 201.4 1090 183.55 1090 164 1090 144.5 1082.45 126.65 1075.15 109.4 1061.9 96.15 1048.6 82.85 1031.35 75.55 Z"/>
+</g>
+
+<g id="appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_1_MEMBER_0_FILL">
+<path fill="#FFFFFF" stroke="none" d="
+M 741.3 506.7
+Q 741.3 461.85 726.35 424.3 711.3 386.7 684.3 359.85 657.2 332.9 619.15 317.8 581 302.7 534.5 302.7
+L 379.05 302.7 379.05 710.65 534.5 710.65
+Q 581.15 710.65 619.15 695.7 657.25 680.75 684.3 653.7 711.4 626.55 726.35 589.05 741.3 551.5 741.3 506.7
+M 663.4 506.7
+Q 663.4 540.25 654.55 566.95 645.6 593.65 628.85 612.05 611.85 630.8 588.25 640.45 564.35 650.3 534.5 650.3
+L 455.2 650.3 455.2 363.1 534.5 363.1
+Q 564.35 363.1 588.25 372.95 611.75 382.55 628.85 401.3 645.6 419.8 654.55 446.45 663.5 473.4 663.4 506.7
+M 1078.7 365.05
+L 1078.7 302.7 756.8 302.7 756.8 365.05 879.8 365.05 879.8 710.65 955.7 710.65 955.7 365.05 1078.7 365.05 Z"/>
+</g>
+
+<path id="appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_0_1_STROKES" stroke="#169587" stroke-width="2" stroke-linejoin="round" stroke-linecap="butt" fill="none" d="
+M 37.4 432
+L 1 467.95 386.6 849 423 813.1 37.4 432 Z"/>
+
+<path id="appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_1_1_STROKES" stroke="#169587" stroke-width="2" stroke-linejoin="round" stroke-linecap="butt" fill="none" d="
+M 1011.55 140
+L 973 158.3 1414.4 572 1453 553.75 1011.55 140 Z"/>
+
+<path id="appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_2_1_STROKES" stroke="#169587" stroke-width="2" stroke-linejoin="round" stroke-linecap="butt" fill="none" d="
+M 412 780.65
+L 471.05 837 1033.95 149.4 974.9 93 412 780.65 Z"/>
+
+<path id="appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_1_MEMBER_0_1_STROKES" stroke="#FFFFFF" stroke-width="18" stroke-linejoin="round" stroke-linecap="butt" fill="none" d="
+M 1078.7 302.7
+L 756.8 302.7 756.8 365.05 879.8 365.05 879.8 710.65 955.7 710.65 955.7 365.05 1078.7 365.05 1078.7 302.7 Z
+M 654.55 566.95
+Q 645.6 593.65 628.85 612.05 611.85 630.8 588.25 640.45 564.35 650.3 534.5 650.3
+L 455.2 650.3 455.2 363.1 534.5 363.1
+Q 564.35 363.1 588.25 372.95 611.75 382.55 628.85 401.3 645.6 419.8 654.55 446.45 663.5 473.4 663.4 506.7 663.4 540.25 654.55 566.95 Z
+M 726.35 424.3
+Q 711.3 386.7 684.3 359.85 657.2 332.9 619.15 317.8 581 302.7 534.5 302.7
+L 379.05 302.7 379.05 710.65 534.5 710.65
+Q 581.15 710.65 619.15 695.7 657.25 680.75 684.3 653.7 711.4 626.55 726.35 589.05 741.3 551.5 741.3 506.7 741.3 461.85 726.35 424.3 Z"/>
+</defs>
+
+<g transform="matrix( 1, 0, 0, 1, -1393.1,22.4) ">
+<use xlink:href="#Layer1_0_FILL"/>
+</g>
+
+<g transform="matrix( 1, 0, 0, 1, -214.95,0.75) ">
+<mask id="Mask_Mask_1">
+<g transform="matrix( 1, 0, 0, 1, 0,0) ">
+<use xlink:href="#Mask_appicon_svg_Layer_1__Clip_Group__0_2_MASK_0_FILL"/>
+</g>
+</mask>
+
+<g mask="url(#Mask_Mask_1)">
+<g transform="matrix( 1, 0, 0, 1, 0,0) ">
+<use xlink:href="#appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_0_FILL"/>
+
+<use xlink:href="#appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_0_1_STROKES"/>
+</g>
+
+<g transform="matrix( 1, 0, 0, 1, 0,0) ">
+<use xlink:href="#appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_1_FILL"/>
+
+<use xlink:href="#appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_1_1_STROKES"/>
+</g>
+
+<g transform="matrix( 1, 0, 0, 1, 0,0) ">
+<use xlink:href="#appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_2_FILL"/>
+
+<use xlink:href="#appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_2_1_STROKES"/>
+</g>
+
+<g transform="matrix( 1, 0, 0, 1, 0,0) ">
+<use xlink:href="#appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_3_FILL"/>
+</g>
+
+<g transform="matrix( 1, 0, 0, 1, 0,0) ">
+<use xlink:href="#appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_0_MEMBER_4_FILL"/>
+</g>
+
+<g transform="matrix( 1, 0, 0, 1, 0,0) ">
+<use xlink:href="#appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_1_MEMBER_0_FILL"/>
+
+<use xlink:href="#appicon_svg_Layer_1__Clip_Group__0_Layer2_0_MEMBER_0_MEMBER_1_MEMBER_0_1_STROKES"/>
+</g>
+</g>
+</g>
+</svg>
