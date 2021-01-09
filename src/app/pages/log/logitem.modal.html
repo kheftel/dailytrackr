@@ -1,4 +1,4 @@
-<ion-header translucent mode="ios">
+<ion-header translucent>
   <ion-toolbar>
     <ion-title>{{item ? 'Edit' : 'Add'}} Log</ion-title>
     <ion-buttons slot="end">
@@ -8,27 +8,24 @@
 </ion-header>
 <ion-content>
   <form [formGroup]="formGroup">
-    <ion-list>
+    <ion-list lines="none" class="subtle-bottom-border">
       <ion-item>
         <ion-label>Time:</ion-label>
         <ion-datetime formControlName="time" display-format="MMM DD, YYYY hh:mm a"></ion-datetime>
       </ion-item>
     </ion-list>
 
-    <ion-list formArrayName="symptoms">
+    <ion-list formArrayName="symptoms" class="subtle-bottom-border">
       <ion-item lines="none">
         <ion-label>
           <h2>Symptoms:</h2>
         </ion-label>
-        <ion-button (click)="clickAddSymptom()">
-          <ion-icon slot="start" name="add"></ion-icon>Add
-        </ion-button>
         <ion-button (click)="clickCopyFromPrevious('symptoms')">
           <ion-icon name="copy" slot="start"></ion-icon>Copy from prev
         </ion-button>
       </ion-item>
 
-      <div *ngFor="let symptom of symptoms.controls; let i=index">
+      <ng-container *ngFor="let symptom of symptoms.controls; let i=index">
         <ion-item-group [formGroupName]="i">
           <!-- <ion-item lines="none" class="header">
             <ion-label>Symptom {{i+1}}</ion-label>
@@ -45,17 +42,19 @@
             <ion-input type="number" formControlName="value" placeholder="1-10"></ion-input>
           </ion-item>
         </ion-item-group>
-      </div>
+      </ng-container>
+      <ion-item lines="none">
+        <ion-button (click)="clickAddSymptom()">
+          <ion-icon slot="start" name="add"></ion-icon>Add
+        </ion-button>
+      </ion-item>
     </ion-list>
 
-    <ion-list formArrayName="mitigations">
+    <ion-list formArrayName="mitigations" class="subtle-bottom-border">
       <ion-item lines="none">
         <ion-label>
           <h2>Mitigations:</h2>
         </ion-label>
-        <ion-button (click)="clickAddMitigation()">
-          <ion-icon name="add"></ion-icon>Add
-        </ion-button>
       </ion-item>
 
       <ion-item-group>
@@ -65,9 +64,15 @@
           <ion-button slot="end" (click)="deleteMitigation(i)">Delete</ion-button>
         </ion-item>
       </ion-item-group>
+
+      <ion-item lines="none">
+        <ion-button (click)="clickAddMitigation()">
+          <ion-icon name="add"></ion-icon>Add
+        </ion-button>
+      </ion-item>
     </ion-list>
 
-    <ion-list>
+    <ion-list lines="none" class="subtle-bottom-border">
       <ion-item lines="none">
         <ion-label>
           <h2>Notes:</h2>
