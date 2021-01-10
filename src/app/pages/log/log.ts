@@ -248,7 +248,7 @@ export class LogPage implements OnInit, AfterViewInit {
     // next tick, animate in any new items
     setTimeout(() => {
       for (const item of list) {
-        if (item.state == "new") item.state = "initial";
+        if (item.state === "new") item.state = "initial";
       }
     }, 0);
   }
@@ -366,7 +366,7 @@ export class LogPage implements OnInit, AfterViewInit {
     console.log(event);
     console.log(event.element.id);
 
-    if (event.toState == "deleted") {
+    if (event.toState === "deleted") {
       console.log("deleted: " + event.element.id);
       // remove from array
       let index = this.getItemIndex(event.element.id);
@@ -377,7 +377,7 @@ export class LogPage implements OnInit, AfterViewInit {
     }
 
     // go back to initial state after editing
-    if (event.toState == "edited") {
+    if (event.toState === "edited") {
       let item = this.getItem(event.element.id);
       item.state = "initial";
     }
