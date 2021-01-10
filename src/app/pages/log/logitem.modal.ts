@@ -73,8 +73,8 @@ export class LogItemModal implements OnInit {
     const tNow = firebase.firestore.Timestamp.fromDate(dNow);
 
     if (this.doc) {
-      console.log("modal edit mode");
-      console.log(this.doc);
+      console.log("modal edit mode: " + this.doc.id);
+      console.log(this.doc.data());
 
       const data = this.doc.data();
 
@@ -228,11 +228,11 @@ export class LogItemModal implements OnInit {
     }
 
     if (this.doc) {
-      this.doc.ref.update(data).then(() => {
+      this.logData.updateLogItem(this.doc.id, data).then((doc) => {
         let result: LogItemModalResult = {
           saved: true,
           action: "update",
-          doc: this.doc,
+          doc: doc,
           msg:
             "Successfully updated entry " +
             format(data.time.toDate(), "yyyy-MM-dd h:mm a"),

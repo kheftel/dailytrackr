@@ -36,6 +36,7 @@ import { LogItemModal, LogItemModalResult } from "./logitem.modal";
 import { TweenLite } from "gsap";
 import {
   animate,
+  keyframes,
   state,
   style,
   transition,
@@ -52,37 +53,33 @@ import {
         "deleted",
         style({
           transform: "scale(0)",
-          filter: "none",
-          opacity: 0,
+          // opacity: 0,
         })
       ),
       state(
         "new",
         style({
           transform: "scale(0)",
-          filter: "none",
-          opacity: 0,
+          // opacity: 0,
         })
       ),
       state(
         "initial",
         style({
           transform: "scale(1)",
-          filter: "none",
-          opacity: 1,
+          // opacity: 1,
         })
       ),
       state(
         "edited",
         style({
-          transform: "scale(.95)",
-          opacity: 0.5,
-          filter: "grayscale(100%) blur(5px)",
+          transform: "scale(1.05)",
         })
       ),
-      transition("initial => deleted", [animate(".5s ease-out")]),
-      transition("initial <=> edited", [animate("200ms ease-out")]),
-      transition("new => initial", [animate(".5s ease-out")]),
+      transition("new => initial", [animate("500ms 250ms ease-out")]),
+      transition("initial => deleted", [animate("500ms 250ms ease-in")]),
+      transition("initial => edited", [animate("250ms 250ms ease-out")]),
+      transition("edited => initial", [animate("250ms ease-out")]),
     ]),
   ],
 })
@@ -341,10 +338,11 @@ export class LogPage implements OnInit, AfterViewInit {
               this.prepList(this.dataList);
               break;
             case "update":
-              console.log("log: updated item:");
-              console.log(data.doc);
+              console.log("log: updated item: " + data.doc.id);
+              console.log(data.doc.data());
 
               item = this.getItem(data.doc.id);
+              item.doc = data.doc;
               item.data = item.doc.data() as LogItem;
               item.state = "edited";
               break;

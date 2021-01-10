@@ -142,7 +142,14 @@ export class HealthlogData {
   }
 
   updateLogItem(id: string, data: LogItem) {
-    return this.firestore.doc<LogItem>("healthlog/" + id).update(data);
+    return new Promise<firebase.firestore.QueryDocumentSnapshot>((resolve) => {
+      let ref = this.firestore.doc<LogItem>("healthlog/" + id);
+      ref.update(data).then(() => {
+        ref.get().subscribe((doc) => {
+          resolve(doc);
+        });
+      });
+    });
   }
 
   deleteLogItem(id: string) {
