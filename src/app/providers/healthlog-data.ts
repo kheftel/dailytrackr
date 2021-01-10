@@ -1,6 +1,10 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { AngularFirestore, QueryFn } from "@angular/fire/firestore";
+import {
+  AngularFirestore,
+  AngularFirestoreDocument,
+  QueryFn,
+} from "@angular/fire/firestore";
 import { format } from "date-fns";
 import { Observable, of } from "rxjs";
 import { map } from "rxjs/operators";
@@ -9,7 +13,22 @@ import { UserData } from "./user-data";
 
 import firebase from "firebase/app";
 import "firebase/firestore";
-import { Key } from "protractor";
+
+export interface LogItemDisplay {
+  data: LogItem;
+  doc: firebase.firestore.QueryDocumentSnapshot;
+  showDatetime: boolean;
+  state: string;
+}
+
+export interface LogItem {
+  time: firebase.firestore.Timestamp;
+  symptoms: {
+    [key: string]: number;
+  };
+  mitigations: string[];
+  notes: string;
+}
 
 @Injectable({
   providedIn: "root",
@@ -48,7 +67,7 @@ export class HealthlogData {
       ref.orderBy("time", "desc").startAfter(time).limit(1);
 
     return this.firestore
-      .collection("healthlog", qFn)
+      .collection<LogItem>("healthlog", qFn)
       .get()
       .pipe(
         map((qs) => {
@@ -64,7 +83,7 @@ export class HealthlogData {
       : (ref) => ref.orderBy("time", "desc").limit(max);
 
     return this.firestore
-      .collection("healthlog", qFn)
+      .collection<LogItem>("healthlog", qFn)
       .get()
       .pipe(
         map((qs) => {
@@ -110,16 +129,24 @@ export class HealthlogData {
       );
   }
 
-  addLogItem(data: any) {
-    return this.firestore.collection("healthlog").add(data);
+  addLogItem(data: LogItem) {
+    return new Promise<firebase.firestore.QueryDocumentSnapshot>((resolve) => {
+      let id: string = this.firestore.createId();
+      let ref = this.firestore.doc<LogItem>("healthlog/" + id);
+      ref.set(data).then(() => {
+        ref.get().subscribe((doc) => {
+          resolve(doc);
+        });
+      });
+    });
   }
 
-  updateLogItem(id: string, data: any) {
-    return this.firestore.doc("healthlog/" + id).update(data);
+  updateLogItem(id: string, data: LogItem) {
+    return this.firestore.doc<LogItem>("healthlog/" + id).update(data);
   }
 
   deleteLogItem(id: string) {
-    return this.firestore.doc("healthlog/" + id).delete();
+    return this.firestore.doc<LogItem>("healthlog/" + id).delete();
   }
 
   getDateKey(date?: string) {
@@ -130,17 +157,17 @@ export class HealthlogData {
     return date;
   }
 
-  loadDate(date?: string) {
-    const key: string = this.getDateKey(date);
-    if (this.healthlogData[key]) {
-      return this.healthlogData[key];
-    } else {
-      this.healthlogData[key] = this.firestore
-        .doc("healthlog/" + key)
-        .valueChanges();
-      return this.healthlogData[key];
-    }
-  }
+  // loadDate(date?: string) {
+  //   const key: string = this.getDateKey(date);
+  //   if (this.healthlogData[key]) {
+  //     return this.healthlogData[key];
+  //   } else {
+  //     this.healthlogData[key] = this.firestore
+  //       .doc<LogItem>("healthlog/" + key)
+  //       .valueChanges();
+  //     return this.healthlogData[key];
+  //   }
+  // }
 
   load(): any {
     if (this.data) {
@@ -183,63 +210,34 @@ export class HealthlogData {
     return this.data;
   }
 
-  getDayList(date?: string): Observable<any[]> {
-    return this.loadDate(date).pipe(
-      map((doc) => {
-        // filter for consumption
-        return this.processDayList(doc.items);
+  // getDayList(date?: string): Observable<any[]> {
+  //   return this.loadDate(date).pipe(
+  //     map((doc) => {
+  //       // filter for consumption
+  //       return this.processDayList(doc.items);
+  //     })
+  //   );
+  // }
 
-        //   let data = doc.data;
-        //   let processed: any[] = [];
-        //   for (const item of data) {
-        //     let processedItem: any = { symptoms: {} };
-        //     for (const key in item) {
-        //       if(key === 'timestamp') {
-        //         processedItem.time = (item[key] as firebase.firestore.Timestamp).toDate();
-        //         processedItem.timestamp = item[key];
-        //       }
-        //       else if(key === 'mitigations') {
-        //         processedItem.mitigations = [...item[key]];
-        //       }
-        //       else {
-        //         processedItem.symptoms[key] = item[key];
-        //       }
-        //     }
+  // processDayList(list) {
+  //   const processed: any[] = [];
+  //   for (const item of list) {
+  //     const processedItem: any = { ...item };
+  //     for (const key in item) {
+  //       // convert firebase timestamps to js dates
+  //       if (item[key] instanceof firebase.firestore.Timestamp) {
+  //         processedItem[key] = item[key].toDate();
+  //       }
+  //     }
+  //     processed.push(processedItem);
+  //   }
+  //   processed.sort(
+  //     (a: any, b: any) =>
+  //       (a.time as Date).valueOf() - (b.time as Date).valueOf()
+  //   );
 
-        //     processed.push(processedItem);
-        //   }
-        //   processed.sort(
-        //     (a: any, b: any) =>
-        //       (a.time as Date).valueOf() - (b.time as Date).valueOf()
-        //   );
-        //   return processed;
-      })
-    );
-  }
-
-  processDayList(list) {
-    const processed: any[] = [];
-    for (const item of list) {
-      const processedItem: any = { ...item };
-      for (const key in item) {
-        // convert firebase timestamps to js dates
-        if (item[key] instanceof firebase.firestore.Timestamp) {
-          processedItem[key] = item[key].toDate();
-        }
-      }
-      processed.push(processedItem);
-    }
-    processed.sort(
-      (a: any, b: any) =>
-        (a.time as Date).valueOf() - (b.time as Date).valueOf()
-    );
-
-    // for(const item of processed) {
-    //   this.firestore.collection('healthlog').add(item);
-    // }
-
-    return processed;
-  }
+  //   return processed;
+  // }
 
   getTimeline(
     dayIndex: number,

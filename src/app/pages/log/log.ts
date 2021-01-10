@@ -16,23 +16,75 @@ import {
   Config,
   IonInfiniteScroll,
   IonContent,
+  IonRefresher,
 } from "@ionic/angular";
 
 import { ScheduleFilterPage } from "../schedule-filter/schedule-filter";
 import { ConferenceData } from "../../providers/conference-data";
 import { UserData } from "../../providers/user-data";
-import { HealthlogData } from "../../providers/healthlog-data";
+import {
+  HealthlogData,
+  LogItem,
+  LogItemDisplay,
+} from "../../providers/healthlog-data";
 import { Observable } from "rxjs";
 import { format } from "date-fns";
 
 import firebase from "firebase/app";
 import "firebase/firestore";
-import { LogItemModal } from "./logitem.modal";
+import { LogItemModal, LogItemModalResult } from "./logitem.modal";
+import { TweenLite } from "gsap";
+import {
+  animate,
+  state,
+  style,
+  transition,
+  trigger,
+} from "@angular/animations";
 
 @Component({
   selector: "page-log",
   templateUrl: "log.html",
   styleUrls: ["./log.scss"],
+  animations: [
+    trigger("itemState", [
+      state(
+        "deleted",
+        style({
+          transform: "scale(0)",
+          filter: "none",
+          opacity: 0,
+        })
+      ),
+      state(
+        "new",
+        style({
+          transform: "scale(0)",
+          filter: "none",
+          opacity: 0,
+        })
+      ),
+      state(
+        "initial",
+        style({
+          transform: "scale(1)",
+          filter: "none",
+          opacity: 1,
+        })
+      ),
+      state(
+        "edited",
+        style({
+          transform: "scale(.95)",
+          opacity: 0.5,
+          filter: "grayscale(100%) blur(5px)",
+        })
+      ),
+      transition("initial => deleted", [animate(".5s ease-out")]),
+      transition("initial <=> edited", [animate("200ms ease-out")]),
+      transition("new => initial", [animate(".5s ease-out")]),
+    ]),
+  ],
 })
 export class LogPage implements OnInit, AfterViewInit {
   // Gets a reference to the list element
@@ -41,6 +93,8 @@ export class LogPage implements OnInit, AfterViewInit {
   @ViewChild("infiniteScroll", null) infiniteScroll: IonInfiniteScroll;
 
   @ViewChild("content", { static: true }) content: IonContent;
+
+  @ViewChild("refresher", { static: true }) refresher: IonRefresher;
 
   scrollElement: HTMLElement;
 
@@ -55,7 +109,7 @@ export class LogPage implements OnInit, AfterViewInit {
   showSearchbar: boolean;
 
   dataList$: Observable<any[]>;
-  dataList: any[] = [];
+  dataList: LogItemDisplay[] = [];
 
   batchSize: number = 5;
   loading: boolean = false;
@@ -86,13 +140,13 @@ export class LogPage implements OnInit, AfterViewInit {
     this.refreshDataList();
   }
 
-  refreshDataList() {
+  refreshDataList(fromRefresher: boolean = false) {
     // Close any open sliding items when the list updates
     // if (this.logList) {
     //   this.logList.closeSlidingItems();
     // }
 
-    const tmpList = [];
+    const tmpList: LogItemDisplay[] = [];
     if (this.infiniteScroll) this.infiniteScroll.disabled = false;
     this.noMoreData = false;
     this.loading = true;
@@ -109,22 +163,29 @@ export class LogPage implements OnInit, AfterViewInit {
             this.infiniteScroll.disabled = true;
           }
           this.noMoreData = true;
+          if (fromRefresher) {
+            this.refresher.complete();
+          }
           return;
         }
 
         console.log("loaded " + docs.length);
         docs.forEach((doc) => {
-          tmpList.push(this.prepDoc(doc));
+          tmpList.push(this.docToLogItem(doc));
         });
         this.prepList(tmpList);
         this.dataList = tmpList;
         console.log("data list length = " + this.dataList.length);
 
+        if (fromRefresher) {
+          this.refresher.complete();
+        }
+
         // make it load more if needed because of a bug in infinite scroll
         if (this.infiniteScroll) {
           this.infiniteScroll.complete();
-          this.checkContentTooShortToScroll();
         }
+        this.checkContentTooShortToScroll();
       });
 
     // this.dataList$ = this.logData.getDayList();
@@ -146,8 +207,12 @@ export class LogPage implements OnInit, AfterViewInit {
       });
   }
 
+  onRefresh() {
+    this.refreshDataList(true);
+  }
+
   checkContentTooShortToScroll() {
-    if (!this.infiniteScroll) return;
+    // if (!this.infiniteScroll) return;
     // wait one tick to let list height update
     setTimeout(() => {
       const scrollHeight = this.scrollElement.scrollHeight;
@@ -163,7 +228,11 @@ export class LogPage implements OnInit, AfterViewInit {
     }, 1);
   }
 
-  prepList(list) {
+  prepList(list: LogItemDisplay[]) {
+    list.sort((a, b) =>
+      a.data.time.valueOf() > b.data.time.valueOf() ? -1 : 1
+    );
+
     for (let i = 0; i < list.length; i++) {
       const item = list[i];
       if (i > 0) {
@@ -175,31 +244,56 @@ export class LogPage implements OnInit, AfterViewInit {
         item.showDatetime = true;
       }
     }
+
+    // next tick, animate in any new items
+    setTimeout(() => {
+      for (const item of list) {
+        if (item.state == "new") item.state = "initial";
+      }
+    }, 0);
   }
 
-  prepDoc(doc) {
-    const item: any = {
-      data: doc.data(),
-      ref: doc.ref,
-      id: doc.id,
+  docToLogItem(doc: firebase.firestore.QueryDocumentSnapshot): LogItemDisplay {
+    const item: LogItemDisplay = {
+      data: doc.data() as LogItem,
+      doc: doc,
+      showDatetime: false,
+      state: "initial",
     };
 
     return item;
   }
 
-  edit(item) {
+  getItem(id: string) {
+    return this.dataList.find((v) => v.doc.id === id);
+  }
+
+  getItemIndex(id: string) {
+    return this.dataList.findIndex((v) => v.doc.id === id);
+  }
+
+  patchItem(item: LogItemDisplay) {
+    let index: number = this.getItemIndex(item.doc.id);
+
+    if (index >= 0) {
+      this.dataList[index].data = item.data;
+      this.prepList(this.dataList);
+    }
+  }
+
+  edit(item: LogItemDisplay) {
     this.modalCtrl
       .create({
         component: LogItemModal,
         // cssClass: 'addlog-modal auto-height',
         componentProps: {
-          item: item,
+          doc: item.doc,
         },
       })
       .then((modal) => {
         modal.present();
-        modal.onWillDismiss().then((value) => {
-          this.onModalDismissed(value);
+        modal.onWillDismiss().then((result) => {
+          this.onModalDismissed(result.data);
         });
       });
   }
@@ -209,24 +303,21 @@ export class LogPage implements OnInit, AfterViewInit {
     this.modalCtrl
       .create({
         component: LogItemModal,
-        // cssClass: 'logitem-modal',
-        componentProps: {
-          // editMode: editMode,
-        },
+        componentProps: {},
       })
       .then((modal) => {
         modal.present();
-        modal.onWillDismiss().then((value) => {
-          this.onModalDismissed(value);
+        modal.onWillDismiss().then((result) => {
+          this.onModalDismissed(result.data);
         });
       });
   }
 
-  onModalDismissed(value) {
-    if (value.data && value.data.saved) {
+  onModalDismissed(data: LogItemModalResult) {
+    if (data && data.saved) {
       this.toastCtrl
         .create({
-          header: value.data.msg || "Successfully saved!",
+          header: data.msg || "Successfully saved!",
           duration: 3000,
           buttons: [
             {
@@ -237,8 +328,58 @@ export class LogPage implements OnInit, AfterViewInit {
         })
         .then((toast) => {
           toast.present();
-          this.refreshDataList();
+
+          console.log(data.action);
+          let item: LogItemDisplay;
+          switch (data.action) {
+            case "add":
+              item = this.docToLogItem(data.doc);
+              item.state = "new";
+              this.dataList.unshift(item);
+
+              // sort the list, add headers
+              this.prepList(this.dataList);
+              break;
+            case "update":
+              console.log("log: updated item:");
+              console.log(data.doc);
+
+              item = this.getItem(data.doc.id);
+              item.data = item.doc.data() as LogItem;
+              item.state = "edited";
+              break;
+            case "delete":
+              console.log("log: deleted:");
+              console.log(data.deletedId);
+
+              // remove from the list after animation
+              item = this.getItem(data.deletedId);
+              item.state = "deleted";
+              break;
+          }
         });
+    }
+  }
+
+  onAnimationEnd(event) {
+    console.log("animation event");
+    console.log(event);
+    console.log(event.element.id);
+
+    if (event.toState == "deleted") {
+      console.log("deleted: " + event.element.id);
+      // remove from array
+      let index = this.getItemIndex(event.element.id);
+      if (index >= 0) {
+        this.dataList.splice(index, 1);
+        this.prepList(this.dataList);
+      }
+    }
+
+    // go back to initial state after editing
+    if (event.toState == "edited") {
+      let item = this.getItem(event.element.id);
+      item.state = "initial";
     }
   }
 
@@ -312,15 +453,15 @@ export class LogPage implements OnInit, AfterViewInit {
 
         // add loaded documents to list
         docs.forEach((doc) => {
-          tmpList.push(this.prepDoc(doc));
+          tmpList.push(this.docToLogItem(doc));
         });
         this.dataList = this.dataList.concat(tmpList);
         this.prepList(this.dataList);
         console.log("data list length = " + this.dataList.length);
         if (this.infiniteScroll) {
           this.infiniteScroll.complete();
-          this.checkContentTooShortToScroll();
         }
+        this.checkContentTooShortToScroll();
       });
   }
 

@@ -21,7 +21,19 @@ import {
 } from "date-fns";
 import firebase from "firebase/app";
 import "firebase/firestore";
-import { HealthlogData } from "../../providers/healthlog-data";
+import {
+  HealthlogData,
+  LogItem,
+  LogItemDisplay,
+} from "../../providers/healthlog-data";
+
+export interface LogItemModalResult {
+  saved: boolean;
+  action: string;
+  doc?: firebase.firestore.QueryDocumentSnapshot;
+  deletedId?: string;
+  msg: string;
+}
 
 @Component({
   selector: "logitem-modal",
@@ -31,23 +43,23 @@ import { HealthlogData } from "../../providers/healthlog-data";
 export class LogItemModal implements OnInit {
   formGroup: FormGroup;
 
-  @Input() item: any;
+  @Input() doc: firebase.firestore.QueryDocumentSnapshot;
 
-  validationMessages = {
-    startTime: [
-      { type: "nopast", message: "Start time cannot be in the past." },
-    ],
-    endTime: [
-      {
-        type: "nopast",
-        message: "End time cannot be in the past.",
-      },
-      {
-        type: "nostart",
-        message: "End time cannot be the same as or before start time.",
-      },
-    ],
-  };
+  // validationMessages = {
+  //   startTime: [
+  //     { type: "nopast", message: "Start time cannot be in the past." },
+  //   ],
+  //   endTime: [
+  //     {
+  //       type: "nopast",
+  //       message: "End time cannot be in the past.",
+  //     },
+  //     {
+  //       type: "nostart",
+  //       message: "End time cannot be the same as or before start time.",
+  //     },
+  //   ],
+  // };
 
   constructor(
     private modalCtrl: ModalController,
@@ -60,11 +72,11 @@ export class LogItemModal implements OnInit {
     const dNow = new Date();
     const tNow = firebase.firestore.Timestamp.fromDate(dNow);
 
-    if (this.item) {
+    if (this.doc) {
       console.log("modal edit mode");
-      console.log(this.item);
+      console.log(this.doc);
 
-      const data = this.item.data;
+      const data = this.doc.data();
 
       // construct the object to build the formgroup with from the passed-in data
       const formInitData: any = {
@@ -198,10 +210,12 @@ export class LogItemModal implements OnInit {
   onSaveClick() {
     console.log(this.formGroup.value);
 
-    const data: any = {
-      time: roundToNearestMinutes(new Date(this.formGroup.value.time), {
-        nearestTo: 1,
-      }),
+    const data: LogItem = {
+      time: firebase.firestore.Timestamp.fromDate(
+        roundToNearestMinutes(new Date(this.formGroup.value.time), {
+          nearestTo: 1,
+        })
+      ),
       symptoms: {},
       mitigations: [],
       notes: this.formGroup.value.notes,
@@ -213,36 +227,46 @@ export class LogItemModal implements OnInit {
       if (mitigation) data.mitigations.push(mitigation);
     }
 
-    if (this.item) {
-      this.logData.updateLogItem(this.item.id, data).then(() => {
-        this.modalCtrl.dismiss({
+    if (this.doc) {
+      this.doc.ref.update(data).then(() => {
+        let result: LogItemModalResult = {
           saved: true,
+          action: "update",
+          doc: this.doc,
           msg:
             "Successfully updated entry " +
-            format(data.time, "yyyy-MM-dd h:mm a"),
-        });
+            format(data.time.toDate(), "yyyy-MM-dd h:mm a"),
+        };
+        this.modalCtrl.dismiss(result);
       });
     } else {
-      this.logData.addLogItem(data).then(() => {
-        this.modalCtrl.dismiss({
+      this.logData.addLogItem(data).then((doc) => {
+        let result: LogItemModalResult = {
           saved: true,
+          action: "add",
+          doc: doc,
           msg:
             "Successfully added new entry " +
-            format(data.time, "yyyy-MM-dd h:mm a"),
-        });
+            format(data.time.toDate(), "yyyy-MM-dd h:mm a"),
+        };
+        this.modalCtrl.dismiss(result);
       });
     }
   }
 
   onDeleteClick() {
-    if (this.item) {
-      this.logData.deleteLogItem(this.item.id).then(() => {
-        this.modalCtrl.dismiss({
+    if (this.doc) {
+      let id: string = this.doc.id;
+      this.doc.ref.delete().then(() => {
+        let result: LogItemModalResult = {
           saved: true,
+          action: "delete",
+          deletedId: id,
           msg:
             "Successfully deleted entry " +
             format(new Date(this.formGroup.value.time), "yyyy-MM-dd h:mm a"),
-        });
+        };
+        this.modalCtrl.dismiss(result);
       });
     }
   }

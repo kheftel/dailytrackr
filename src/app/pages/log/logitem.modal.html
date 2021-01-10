@@ -1,6 +1,6 @@
 <ion-header translucent>
   <ion-toolbar>
-    <ion-title>{{item ? 'Edit' : 'Add'}} Log</ion-title>
+    <ion-title>{{doc ? 'Edit' : 'Add'}} Log</ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="dismiss()">Close</ion-button>
     </ion-buttons>
@@ -89,7 +89,7 @@
         <ion-col>
           <ion-button size="default" expand="block" (click)="onSaveClick()" [disabled]="!formGroup.valid">Save</ion-button>
         </ion-col>
-        <ion-col *ngIf="item">
+        <ion-col *ngIf="doc">
           <ion-button color="danger" size="default" expand="block" (click)="onDeleteClick()">Delete</ion-button>
         </ion-col>
         <ion-col>
