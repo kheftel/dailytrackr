@@ -229,7 +229,7 @@ export class LogItemModal implements OnInit {
 
     if (this.doc) {
       this.logData.updateLogItem(this.doc.id, data).then((doc) => {
-        let result: LogItemModalResult = {
+        const result: LogItemModalResult = {
           saved: true,
           action: "update",
           doc: doc,
@@ -241,7 +241,7 @@ export class LogItemModal implements OnInit {
       });
     } else {
       this.logData.addLogItem(data).then((doc) => {
-        let result: LogItemModalResult = {
+        const result: LogItemModalResult = {
           saved: true,
           action: "add",
           doc: doc,
@@ -256,9 +256,9 @@ export class LogItemModal implements OnInit {
 
   onDeleteClick() {
     if (this.doc) {
-      let id: string = this.doc.id;
+      const id: string = this.doc.id;
       this.doc.ref.delete().then(() => {
-        let result: LogItemModalResult = {
+        const result: LogItemModalResult = {
           saved: true,
           action: "delete",
           deletedId: id,

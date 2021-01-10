@@ -270,7 +270,7 @@ export class LogPage implements OnInit, AfterViewInit {
   }
 
   patchItem(item: LogItemDisplay) {
-    let index: number = this.getItemIndex(item.doc.id);
+    const index: number = this.getItemIndex(item.doc.id);
 
     if (index >= 0) {
       this.dataList[index].data = item.data;
@@ -367,7 +367,7 @@ export class LogPage implements OnInit, AfterViewInit {
     if (event.toState === "deleted") {
       console.log("deleted: " + event.element.id);
       // remove from array
-      let index = this.getItemIndex(event.element.id);
+      const index = this.getItemIndex(event.element.id);
       if (index >= 0) {
         this.dataList.splice(index, 1);
         this.prepList(this.dataList);
@@ -376,7 +376,7 @@ export class LogPage implements OnInit, AfterViewInit {
 
     // go back to initial state after editing
     if (event.toState === "edited") {
-      let item = this.getItem(event.element.id);
+      const item = this.getItem(event.element.id);
       item.state = "initial";
     }
   }

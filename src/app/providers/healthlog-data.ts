@@ -131,8 +131,8 @@ export class HealthlogData {
 
   addLogItem(data: LogItem) {
     return new Promise<firebase.firestore.QueryDocumentSnapshot>((resolve) => {
-      let id: string = this.firestore.createId();
-      let ref = this.firestore.doc<LogItem>("healthlog/" + id);
+      const id: string = this.firestore.createId();
+      const ref = this.firestore.doc<LogItem>("healthlog/" + id);
       ref.set(data).then(() => {
         ref.get().subscribe((doc) => {
           resolve(doc);
@@ -143,7 +143,7 @@ export class HealthlogData {
 
   updateLogItem(id: string, data: LogItem) {
     return new Promise<firebase.firestore.QueryDocumentSnapshot>((resolve) => {
-      let ref = this.firestore.doc<LogItem>("healthlog/" + id);
+      const ref = this.firestore.doc<LogItem>("healthlog/" + id);
       ref.update(data).then(() => {
         ref.get().subscribe((doc) => {
           resolve(doc);
