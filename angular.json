@@ -37,7 +37,8 @@
               },
               {
                 "input": "src/global.scss"
-              }
+              },
+              "node_modules/firebaseui/dist/firebaseui.css"
             ],
             "scripts": []
           },
@@ -189,7 +190,8 @@
     }
   },
   "cli": {
-    "defaultCollection": "@ionic/angular-toolkit"
+    "defaultCollection": "@ionic/angular-toolkit",
+    "analytics": "d646bc3a-0cb4-4f36-98f7-f3d8e303f494"
   },
   "schematics": {
     "@ionic/angular-toolkit:component": {

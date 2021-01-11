@@ -23,7 +23,7 @@ export class TutorialPage {
 
   startApp() {
     this.router
-      .navigateByUrl("/app/tabs/log", { replaceUrl: true })
+      .navigateByUrl("/app/tabs/log")
       .then(() => this.storage.set("ion_did_tutorial", true));
   }
 
@@ -36,7 +36,7 @@ export class TutorialPage {
   ionViewWillEnter() {
     this.storage.get("ion_did_tutorial").then((res) => {
       if (res === true) {
-        this.router.navigateByUrl("/app/tabs/log", { replaceUrl: true });
+        this.router.navigateByUrl("/app/tabs/log");
       }
     });
 

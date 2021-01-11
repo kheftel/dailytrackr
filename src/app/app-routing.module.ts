@@ -1,5 +1,6 @@
 import { NgModule } from "@angular/core";
 import { RouterModule, Routes } from "@angular/router";
+import { CheckLoggedIn } from "./providers/check-loggedin.service";
 import { CheckTutorial } from "./providers/check-tutorial.service";
 
 const routes: Routes = [
@@ -32,6 +33,7 @@ const routes: Routes = [
     path: "app",
     loadChildren: () =>
       import("./pages/tabs-page/tabs-page.module").then((m) => m.TabsModule),
+    canLoad: [CheckLoggedIn],
   },
   {
     path: "tutorial",

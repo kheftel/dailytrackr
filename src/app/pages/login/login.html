@@ -4,7 +4,7 @@
       <ion-menu-button></ion-menu-button>
     </ion-buttons>
 
-    <ion-title>Login</ion-title>
+    <ion-title>Login / Sign Up</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -13,7 +13,10 @@
     <img src="assets/img/appicon.svg" alt="Ionic logo">
   </div>
 
-  <form #loginForm="ngForm" novalidate>
+  <firebase-ui (signInSuccessWithAuthResult)="successCallback($event)" (signInFailure)="errorCallback($event)" (uiShown)="uiShownCallback()"></firebase-ui>
+
+
+  <!-- <form #loginForm="ngForm" novalidate>
     <ion-list>
       <ion-item>
         <ion-label position="stacked" color="primary">Username</ion-label>
@@ -48,6 +51,6 @@
         <ion-button (click)="onSignup()" color="light" expand="block">Signup</ion-button>
       </ion-col>
     </ion-row>
-  </form>
+  </form> -->
 
 </ion-content>

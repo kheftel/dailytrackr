@@ -18,6 +18,16 @@ import { AngularFireModule } from "@angular/fire";
 import { AngularFireAnalyticsModule } from "@angular/fire/analytics";
 import { AngularFirestoreModule } from "@angular/fire/firestore";
 
+import { firebase, firebaseui, FirebaseUIModule } from 'firebaseui-angular';
+import { AngularFireAuthModule } from "@angular/fire/auth";
+
+const firebaseUiAuthConfig: firebaseui.auth.Config = {
+  signInFlow: 'popup',
+  signInOptions: [firebase.auth.EmailAuthProvider.PROVIDER_ID],
+  tosUrl: '',
+  privacyPolicyUrl: '',
+};
+
 @NgModule({
   imports: [
     BrowserModule,
@@ -34,6 +44,8 @@ import { AngularFirestoreModule } from "@angular/fire/firestore";
     AngularFireModule.initializeApp(environment.firebase),
     AngularFireAnalyticsModule,
     AngularFirestoreModule,
+    AngularFireAuthModule,
+    FirebaseUIModule.forRoot(firebaseUiAuthConfig),
   ],
   declarations: [AppComponent],
   providers: [InAppBrowser, SplashScreen, StatusBar],

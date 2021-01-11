@@ -80,11 +80,6 @@ const routes: Routes = [
           },
         ],
       },
-      {
-        path: "",
-        redirectTo: "/app/tabs/log",
-        pathMatch: "full",
-      },
     ],
   },
 ];

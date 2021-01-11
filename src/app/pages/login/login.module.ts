@@ -5,9 +5,16 @@ import { IonicModule } from "@ionic/angular";
 
 import { LoginPage } from "./login";
 import { LoginPageRoutingModule } from "./login-routing.module";
+import { FirebaseUIModule } from "firebaseui-angular";
 
 @NgModule({
-  imports: [CommonModule, FormsModule, IonicModule, LoginPageRoutingModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    IonicModule,
+    LoginPageRoutingModule,
+    FirebaseUIModule,
+  ],
   declarations: [LoginPage],
 })
 export class LoginModule {}

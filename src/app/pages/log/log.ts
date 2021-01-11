@@ -67,6 +67,7 @@ import {
         "initial",
         style({
           transform: "scale(1)",
+          filter: "none",
           // opacity: 1,
         })
       ),
@@ -74,6 +75,7 @@ import {
         "edited",
         style({
           transform: "scale(1.05)",
+          filter: "brightness(150%)",
         })
       ),
       transition("new => initial", [animate("500ms 250ms ease-out")]),
@@ -87,7 +89,7 @@ export class LogPage implements OnInit, AfterViewInit {
   // Gets a reference to the list element
   @ViewChild("logList", { static: true }) logList: ElementRef;
 
-  @ViewChild("infiniteScroll", null) infiniteScroll: IonInfiniteScroll;
+  @ViewChild("infiniteScroll", {}) infiniteScroll: IonInfiniteScroll;
 
   @ViewChild("content", { static: true }) content: IonContent;
 
@@ -212,6 +214,10 @@ export class LogPage implements OnInit, AfterViewInit {
     // if (!this.infiniteScroll) return;
     // wait one tick to let list height update
     setTimeout(() => {
+      if (!this.scrollElement) {
+        console.log("log: checktooshorttoscroll: scrollElement is null");
+        return;
+      }
       const scrollHeight = this.scrollElement.scrollHeight;
       const offsetHeight = this.scrollElement.offsetHeight;
 
