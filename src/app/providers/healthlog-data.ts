@@ -73,7 +73,7 @@ export class HealthlogData {
       .get()
       .subscribe((snap) => {
         snap.forEach((doc) => {
-          let data: LogItem = doc.data() as LogItem;
+          const data: LogItem = doc.data() as LogItem;
           if (!data.uid) data.uid = uid;
           doc.ref.set(data).then(() => {
             numClaimed++;
@@ -188,7 +188,7 @@ export class HealthlogData {
       throw new Error("updateLogItem: not logged in!");
     }
 
-    if (data.uid != this.user.uid) {
+    if (data.uid !== this.user.uid) {
       throw new Error(
         "updateLogItem: this item does not belong to current user"
       );
