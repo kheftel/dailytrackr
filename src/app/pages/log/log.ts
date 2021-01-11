@@ -42,6 +42,8 @@ import {
   transition,
   trigger,
 } from "@angular/animations";
+import { AngularFireAuth } from "@angular/fire/auth";
+import { th } from "date-fns/locale";
 
 @Component({
   selector: "page-log",
@@ -114,6 +116,8 @@ export class LogPage implements OnInit, AfterViewInit {
   loading: boolean = false;
   noMoreData: boolean = false;
 
+  // uid: string;
+
   constructor(
     public alertCtrl: AlertController,
     public confData: ConferenceData,
@@ -124,11 +128,19 @@ export class LogPage implements OnInit, AfterViewInit {
     public routerOutlet: IonRouterOutlet,
     public toastCtrl: ToastController,
     public user: UserData,
-    public config: Config
+    public config: Config,
+    private auth: AngularFireAuth
   ) {}
 
   ngOnInit() {
     this.ios = this.config.get("mode") === "ios";
+
+    this.auth.authState.subscribe((u) => {
+      console.log('log: logged in: ' + !!u);
+      if (u) {
+        this.refreshDataList();
+      }
+    });
   }
 
   ngAfterViewInit() {
@@ -136,7 +148,13 @@ export class LogPage implements OnInit, AfterViewInit {
       this.scrollElement = scroll;
     });
 
-    this.refreshDataList();
+    // this.refreshDataList();
+
+    // this.user.getUserId().then((uid) => {
+    //   console.log("log: uid " + uid);
+    //   this.uid = uid;
+    //   this.refreshDataList();
+    // });
   }
 
   refreshDataList(fromRefresher: boolean = false) {
@@ -144,6 +162,8 @@ export class LogPage implements OnInit, AfterViewInit {
     // if (this.logList) {
     //   this.logList.closeSlidingItems();
     // }
+
+    // if (!this.uid) throw new Error("missing uid");
 
     const tmpList: LogItemDisplay[] = [];
     if (this.infiniteScroll) this.infiniteScroll.disabled = false;
@@ -366,9 +386,9 @@ export class LogPage implements OnInit, AfterViewInit {
   }
 
   onAnimationEnd(event) {
-    console.log("animation event");
-    console.log(event);
-    console.log(event.element.id);
+    // console.log("animation event");
+    // console.log(event);
+    // console.log(event.element.id);
 
     if (event.toState === "deleted") {
       console.log("deleted: " + event.element.id);

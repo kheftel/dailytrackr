@@ -13,6 +13,7 @@ import { UserData } from "./user-data";
 
 import firebase from "firebase/app";
 import "firebase/firestore";
+import { AngularFireAuth } from "@angular/fire/auth";
 
 export interface LogItemDisplay {
   data: LogItem;
@@ -28,6 +29,7 @@ export interface LogItem {
   };
   mitigations: string[];
   notes: string;
+  uid?: string;
 }
 
 @Injectable({
@@ -40,22 +42,45 @@ export class HealthlogData {
     [key: string]: Observable<any>;
   } = {};
 
+  user: firebase.User;
+
   constructor(
     public firestore: AngularFirestore,
     public http: HttpClient,
-    public user: UserData
+    public userData: UserData,
+    public afAuth: AngularFireAuth
   ) {
-    // console.log("healthlog constructor");
-    // this.firestore
-    //   .collection("healthlog")
-    //   .get()
-    //   .subscribe((snap) => {
-    //     console.log("loaded data:");
-    //     snap.forEach((doc) => {
-    //       console.log(doc.id);
-    //       console.log(doc.data());
-    //     });
-    //   });
+    this.afAuth.authState.subscribe((u) => {
+      console.log('healthlogdata: user logged in: ' + !!u);
+
+      this.user = u;
+
+      // this.firestore
+      //   .collection<LogItem>("healthlog", (ref) =>
+      //     ref.where("uid", "!=", u.uid)
+      //   )
+      //   .get()
+      //   .subscribe((qs) => {
+      //     console.log("log items not belonging to this user: " + qs.size);
+      //   });
+    });
+  }
+
+  claimOwnershipForAll(uid: string) {
+    let numClaimed: number = 0;
+    this.firestore
+      .collection<LogItem>("healthlog")
+      .get()
+      .subscribe((snap) => {
+        snap.forEach((doc) => {
+          let data: LogItem = doc.data() as LogItem;
+          if (!data.uid) data.uid = uid;
+          doc.ref.set(data).then(() => {
+            numClaimed++;
+            console.log("claimed " + numClaimed + ", " + doc.id);
+          });
+        });
+      });
   }
 
   /**
@@ -78,9 +103,20 @@ export class HealthlogData {
   }
 
   getStream(queryText = "", startAfter?: any, max: number = 10) {
+    let uid;
+    if (this.user) {
+      uid = this.user.uid;
+    } else {
+      throw new Error("getStream: not logged in");
+    }
     const qFn: QueryFn = startAfter
-      ? (ref) => ref.orderBy("time", "desc").startAfter(startAfter).limit(max)
-      : (ref) => ref.orderBy("time", "desc").limit(max);
+      ? (ref) =>
+          ref
+            .where("uid", "==", uid)
+            .orderBy("time", "desc")
+            .startAfter(startAfter)
+            .limit(max)
+      : (ref) => ref.where("uid", "==", uid).orderBy("time", "desc").limit(max);
 
     return this.firestore
       .collection<LogItem>("healthlog", qFn)
@@ -130,6 +166,12 @@ export class HealthlogData {
   }
 
   addLogItem(data: LogItem) {
+    if (!this.user) {
+      throw new Error("addLogItem: not logged in!");
+    }
+
+    data.uid = this.user.uid;
+
     return new Promise<firebase.firestore.QueryDocumentSnapshot>((resolve) => {
       const id: string = this.firestore.createId();
       const ref = this.firestore.doc<LogItem>("healthlog/" + id);
@@ -142,6 +184,16 @@ export class HealthlogData {
   }
 
   updateLogItem(id: string, data: LogItem) {
+    if (!this.user) {
+      throw new Error("updateLogItem: not logged in!");
+    }
+
+    if (data.uid != this.user.uid) {
+      throw new Error(
+        "updateLogItem: this item does not belong to current user"
+      );
+    }
+
     return new Promise<firebase.firestore.QueryDocumentSnapshot>((resolve) => {
       const ref = this.firestore.doc<LogItem>("healthlog/" + id);
       ref.update(data).then(() => {
@@ -314,7 +366,7 @@ export class HealthlogData {
     // then this session does not pass the segment test
     let matchesSegment = false;
     if (segment === "favorites") {
-      if (this.user.hasFavorite(session.name)) {
+      if (this.userData.hasFavorite(session.name)) {
         matchesSegment = true;
       }
     } else {

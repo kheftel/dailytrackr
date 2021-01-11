@@ -128,7 +128,7 @@ export class AppComponent implements OnInit {
 
   openTutorial() {
     this.menu.enable(false);
-    this.storage.set("ion_did_tutorial", false);
+    this.storage.set(this.userData.HAS_SEEN_TUTORIAL, false);
     this.router.navigateByUrl("/tutorial");
   }
 }
