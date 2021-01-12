@@ -147,7 +147,22 @@ export class LogItemModal implements OnInit {
     return this.formGroup.get("mitigations") as FormArray;
   }
 
+  formarrayGetName(which: string) {
+    switch (which) {
+      case "symptoms":
+        return "symptoms";
+      case "goodThings":
+        return "good things";
+      default:
+        throw new Error("invalid formarray " + which);
+    }
+  }
+
   clickCopyFromPrevious(which: string) {
+    if (which !== "symptoms" && which !== "goodThings") {
+      throw new Error("clickCopyFromPrevious: invalid formArray " + which);
+    }
+
     const time = firebase.firestore.Timestamp.fromDate(
       new Date(this.formGroup.value.time)
     );
@@ -156,58 +171,40 @@ export class LogItemModal implements OnInit {
         console.log("previous entry: " + doc.id);
         console.log(doc.data());
 
-        if (which === "symptoms") {
-          const symptoms = doc.data().symptoms;
-          let symptomString = "<br />";
-          Object.keys(symptoms).forEach((key) => {
-            symptomString += "<br />" + key + ": " + symptoms[key];
-          });
-          this.alertCtrl
+        const formarrayData = doc.data()[which];
+        let formarrayName: string = this.formarrayGetName(which);
+        if (!formarrayData) {
+          // none found in previous entry
+          return this.alertCtrl
             .create({
-              message: "Replace symptoms with this data?" + symptomString,
-              buttons: [
-                {
-                  text: "Yes",
-                  handler: (v) => {
-                    this.replaceSymptomsFromDoc(doc);
-                    console.log(v);
-                  },
-                },
-                {
-                  text: "No",
-                  role: "cancel",
-                },
-              ],
-            })
-            .then((alert) => alert.present());
-        } else if (which === "goodThings") {
-          const goodThings = doc.data().goodThings;
-          let gtString = "<br />";
-          Object.keys(goodThings).forEach((key) => {
-            gtString += "<br />" + key + ": " + goodThings[key];
-          });
-          this.alertCtrl
-            .create({
-              message: "Replace good things with this data?" + gtString,
-              buttons: [
-                {
-                  text: "Yes",
-                  handler: (v) => {
-                    this.replaceGoodThingsFromDoc(doc);
-                    console.log(v);
-                  },
-                },
-                {
-                  text: "No",
-                  role: "cancel",
-                },
-              ],
+              message: `No ${formarrayName} found in previous entry`,
+              buttons: ["Ok"],
             })
             .then((alert) => alert.present());
         }
+
+        let formarrayString = "";
+        Object.keys(formarrayData).forEach((key) => {
+          formarrayString += "<br />" + key + ": " + formarrayData[key];
+        });
+        return this.alertCtrl
+          .create({
+            message: `Replace ${formarrayName} with this data?<br />${formarrayString}`,
+            buttons: [
+              {
+                text: "Yes",
+                handler: () => this.replaceFormarrayFromDoc(which, doc),
+              },
+              {
+                text: "No",
+                role: "cancel",
+              },
+            ],
+          })
+          .then((alert) => alert.present());
       } else {
         console.log("no previous entry found");
-        this.alertCtrl
+        return this.alertCtrl
           .create({
             message: "No previous log entry found",
             buttons: ["Ok"],
@@ -217,27 +214,15 @@ export class LogItemModal implements OnInit {
     });
   }
 
-  replaceSymptomsFromDoc(doc) {
-    const symptoms = doc.data().symptoms;
-    this.symptoms.clear();
-    Object.keys(symptoms).forEach((key) => {
-      this.symptoms.push(
+  replaceFormarrayFromDoc(which: string, doc) {
+    const subitem = doc.data()[which];
+    const formArray: FormArray = this[which];
+    formArray.clear();
+    Object.keys(subitem).forEach((key) => {
+      formArray.push(
         this.formBuilder.group({
           name: [key],
-          value: [symptoms[key]],
-        })
-      );
-    });
-  }
-
-  replaceGoodThingsFromDoc(doc) {
-    const goodThings = doc.data().goodThings;
-    this.goodThings.clear();
-    Object.keys(goodThings).forEach((key) => {
-      this.goodThings.push(
-        this.formBuilder.group({
-          name: [key],
-          value: [goodThings[key]],
+          value: [subitem[key]],
         })
       );
     });
@@ -263,12 +248,29 @@ export class LogItemModal implements OnInit {
     console.log(this.goodThings.controls);
   }
 
-  deleteSymptom(i) {
-    this.symptoms.removeAt(i);
-  }
+  deleteFormarrayItem(which: string, i: number) {
+    if (which !== "symptoms" && which !== "goodThings") {
+      throw new Error("deleteFormarrayItem: invalid formArray " + which);
+    }
+    let formarray: FormArray = this[which];
 
-  deleteGoodThing(i) {
-    this.goodThings.removeAt(i);
+    formarray.removeAt(i)
+
+    // return this.alertCtrl
+    //   .create({
+    //     message: `Really delete?`,
+    //     buttons: [
+    //       {
+    //         text: "Yes",
+    //         handler: () => formarray.removeAt(i),
+    //       },
+    //       {
+    //         text: "No",
+    //         role: "cancel",
+    //       },
+    //     ],
+    //   })
+    //   .then((alert) => alert.present());
   }
 
   clickAddMitigation() {
@@ -333,19 +335,37 @@ export class LogItemModal implements OnInit {
 
   onDeleteClick() {
     if (this.doc) {
-      const id: string = this.doc.id;
-      this.doc.ref.delete().then(() => {
-        const result: LogItemModalResult = {
-          saved: true,
-          action: "delete",
-          deletedId: id,
-          msg:
-            "Successfully deleted entry " +
-            format(new Date(this.formGroup.value.time), "yyyy-MM-dd h:mm a"),
-        };
-        this.modalCtrl.dismiss(result);
-      });
+      return this.alertCtrl
+        .create({
+          message: `Really delete this log item?`,
+          buttons: [
+            {
+              text: "Yes",
+              handler: () => this.deleteSelf(),
+            },
+            {
+              text: "No",
+              role: "cancel",
+            },
+          ],
+        })
+        .then((alert) => alert.present());
     }
+  }
+
+  deleteSelf() {
+    const id: string = this.doc.id;
+    this.doc.ref.delete().then(() => {
+      const result: LogItemModalResult = {
+        saved: true,
+        action: "delete",
+        deletedId: id,
+        msg:
+          "Successfully deleted entry " +
+          format(new Date(this.formGroup.value.time), "yyyy-MM-dd h:mm a"),
+      };
+      this.modalCtrl.dismiss(result);
+    });
   }
 
   //   onSaveClick() {

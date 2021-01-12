@@ -1,5 +1,5 @@
 <ion-header translucent>
-  <ion-toolbar>
+  <ion-toolbar color="primary">
     <ion-title>{{doc ? 'Edit' : 'Add'}} Log</ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="dismiss()">Close</ion-button>
@@ -8,20 +8,20 @@
 </ion-header>
 <ion-content>
   <form [formGroup]="formGroup">
-    <ion-list lines="none" class="subtle-bottom-border">
+    <ion-list lines="none">
       <ion-item>
         <ion-label>Time:</ion-label>
         <ion-datetime formControlName="time" display-format="MMM DD, YYYY hh:mm a"></ion-datetime>
       </ion-item>
     </ion-list>
 
-    <ion-list formArrayName="symptoms" class="subtle-bottom-border">
-      <ion-item class="item-header" lines="none">
+    <ion-list formArrayName="symptoms">
+      <ion-item color="light" class="item-header" lines="none">
         <ion-label>
           <h2>Symptoms:</h2>
         </ion-label>
-        <ion-button (click)="clickCopyFromPrevious('symptoms')">
-          <ion-icon name="copy" slot="start"></ion-icon>Copy from prev
+        <ion-button fill="clear" color="dark" (click)="clickCopyFromPrevious('symptoms')">
+          <ion-icon name="copy-outline" slot="start"></ion-icon>Copy from prev
         </ion-button>
       </ion-item>
       <ng-container *ngFor="let symptom of symptoms.controls; let i=index">
@@ -33,7 +33,9 @@
           <ion-item>
             <ion-label>Name:</ion-label>
             <ion-input formControlName="name" placeholder="brainfog, etc..."></ion-input>
-            <ion-button slot="end" (click)="deleteSymptom(i)">Delete</ion-button>
+            <ion-button slot="end" fill="clear" color="dark" (click)="deleteFormarrayItem('symptoms', i)">
+              <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+            </ion-button>
           </ion-item>
           <ion-item>
             <ion-label>Value:</ion-label>
@@ -41,20 +43,20 @@
           </ion-item>
         </ion-item-group>
       </ng-container>
-      <ion-item lines="none">
-        <ion-button (click)="clickAddSymptom()">
+      <ion-item class="add" lines="none">
+        <ion-button color="light" (click)="clickAddSymptom()">
           <ion-icon slot="start" name="add"></ion-icon>Add
         </ion-button>
       </ion-item>
     </ion-list>
 
-    <ion-list formArrayName="goodThings" class="subtle-bottom-border">
-      <ion-item class="item-header" lines="none">
+    <ion-list formArrayName="goodThings">
+      <ion-item color="light" class="item-header" lines="none">
         <ion-label>
           <h2>Good Things:</h2>
         </ion-label>
-        <ion-button (click)="clickCopyFromPrevious('goodThings')">
-          <ion-icon name="copy" slot="start"></ion-icon>Copy from prev
+        <ion-button fill="clear" color="dark" (click)="clickCopyFromPrevious('goodThings')">
+          <ion-icon name="copy-outline" slot="start"></ion-icon>Copy from prev
         </ion-button>
       </ion-item>
       <ng-container *ngFor="let symptom of goodThings.controls; let i=index">
@@ -62,7 +64,9 @@
           <ion-item>
             <ion-label>Name:</ion-label>
             <ion-input formControlName="name" placeholder="productivity, etc..."></ion-input>
-            <ion-button slot="end" (click)="deleteGoodThing(i)">Delete</ion-button>
+            <ion-button slot="end" fill="clear" color="dark" (click)="deleteFormarrayItem('goodThings', i)">
+              <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+            </ion-button>
           </ion-item>
           <ion-item>
             <ion-label>Value:</ion-label>
@@ -70,15 +74,15 @@
           </ion-item>
         </ion-item-group>
       </ng-container>
-      <ion-item lines="none">
-        <ion-button (click)="clickAddGoodThing()">
+      <ion-item class="add" lines="none">
+        <ion-button color="light" (click)="clickAddGoodThing()">
           <ion-icon slot="start" name="add"></ion-icon>Add
         </ion-button>
       </ion-item>
     </ion-list>
 
-    <ion-list formArrayName="mitigations" class="subtle-bottom-border">
-      <ion-item class="item-header" lines="none">
+    <ion-list formArrayName="mitigations">
+      <ion-item color="light" class="item-header" lines="none">
         <ion-label>
           <h2>Mitigations:</h2>
         </ion-label>
@@ -88,26 +92,28 @@
         <ion-item *ngFor="let mitigation of mitigations.controls; let i=index">
           <!-- <ion-label>Name:</ion-label> -->
           <ion-input [formControlName]="i" placeholder="What I tried..."></ion-input>
-          <ion-button slot="end" (click)="deleteMitigation(i)">Delete</ion-button>
+          <ion-button slot="end" fill="clear" color="dark" (click)="deleteMitigation(i)">
+            <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+          </ion-button>
         </ion-item>
       </ion-item-group>
 
-      <ion-item lines="none">
-        <ion-button (click)="clickAddMitigation()">
+      <ion-item class="add" lines="none">
+        <ion-button color="light" (click)="clickAddMitigation()">
           <ion-icon name="add"></ion-icon>Add
         </ion-button>
       </ion-item>
     </ion-list>
 
-    <ion-list lines="none" class="subtle-bottom-border">
-      <ion-item class="item-header" lines="none">
+    <ion-list lines="none">
+      <ion-item color="light" class="item-header" lines="none">
         <ion-label>
           <h2>Notes:</h2>
         </ion-label>
       </ion-item>
 
       <ion-item>
-        <ion-textarea auto-grow formControlName="notes" placeholder="More info..."></ion-textarea>
+        <ion-textarea rows="8" formControlName="notes" placeholder="More info..."></ion-textarea>
       </ion-item>
     </ion-list>
 
