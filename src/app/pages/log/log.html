@@ -84,7 +84,7 @@
             </ng-container>
 
             <ng-container *ngIf="hasKeys(item.data.goodThings)">
-              <h3>Good Things:</h3>
+              <h3 style="margin-top:10px">Good Things:</h3>
               <p class="good-thing ion-color-{{goodThing.severity}}" *ngFor="let goodThing of prepGoodThings(item.data.goodThings)">
                 {{goodThing.name}}:<ion-badge color="{goodThing.severity}}">{{goodThing.value}}</ion-badge>
               </p>
