@@ -51,9 +51,11 @@ export class HealthlogData {
     public afAuth: AngularFireAuth
   ) {
     this.afAuth.authState.subscribe((u) => {
-      console.log('healthlogdata: user logged in: ' + !!u);
+      console.log("healthlogdata: user logged in: " + !!u);
 
       this.user = u;
+
+      // this.claimUnownedEntries(u.uid);
 
       // this.firestore
       //   .collection<LogItem>("healthlog", (ref) =>
@@ -66,7 +68,7 @@ export class HealthlogData {
     });
   }
 
-  claimOwnershipForAll(uid: string) {
+  claimUnownedEntries(uid: string) {
     let numClaimed: number = 0;
     this.firestore
       .collection<LogItem>("healthlog")
@@ -74,11 +76,13 @@ export class HealthlogData {
       .subscribe((snap) => {
         snap.forEach((doc) => {
           const data: LogItem = doc.data() as LogItem;
-          if (!data.uid) data.uid = uid;
-          doc.ref.set(data).then(() => {
-            numClaimed++;
-            console.log("claimed " + numClaimed + ", " + doc.id);
-          });
+          if (!data.uid) {
+            data.uid = uid;
+            doc.ref.set(data).then(() => {
+              numClaimed++;
+              console.log("claimed " + numClaimed + ", " + doc.id);
+            });
+          }
         });
       });
   }
@@ -88,8 +92,19 @@ export class HealthlogData {
    * @param time the timestamp to look before
    */
   getPrevious(time: firebase.firestore.Timestamp) {
+    let uid;
+    if (this.user) {
+      uid = this.user.uid;
+    } else {
+      throw new Error("getPrevious: not logged in");
+    }
+
     const qFn: QueryFn = (ref) =>
-      ref.orderBy("time", "desc").startAfter(time).limit(1);
+      ref
+        .where("uid", "==", uid)
+        .orderBy("time", "desc")
+        .startAfter(time)
+        .limit(1);
 
     return this.firestore
       .collection<LogItem>("healthlog", qFn)
