@@ -136,7 +136,7 @@ export class LogPage implements OnInit, AfterViewInit {
     this.ios = this.config.get("mode") === "ios";
 
     this.auth.authState.subscribe((u) => {
-      console.log('log: logged in: ' + !!u);
+      console.log("log: logged in: " + !!u);
       if (u) {
         this.refreshDataList();
       }
@@ -429,6 +429,11 @@ export class LogPage implements OnInit, AfterViewInit {
     return Object.keys(obj).sort();
   }
 
+  hasKeys(obj?: any) {
+    if(!obj) return false;
+    return Object.keys(obj).length > 0;
+  }
+
   prepSymptoms(symptoms: any) {
     const ret = [];
     for (const key of this.keys(symptoms)) {
@@ -441,6 +446,23 @@ export class LogPage implements OnInit, AfterViewInit {
       else if (item.value <= 6) item.severity = "s3";
       else if (item.value <= 8) item.severity = "s4";
       else item.severity = "s5";
+      ret.push(item);
+    }
+    return ret;
+  }
+
+  prepGoodThings(goodThings: any) {
+    const ret = [];
+    for (const key of this.keys(goodThings)) {
+      const item: any = {};
+      item.value = goodThings[key];
+      item.name = key;
+      item.severity = "";
+      if (item.value <= 2) item.severity = "s5";
+      else if (item.value <= 4) item.severity = "s4";
+      else if (item.value <= 6) item.severity = "s3";
+      else if (item.value <= 8) item.severity = "s2";
+      else item.severity = "s1";
       ret.push(item);
     }
     return ret;

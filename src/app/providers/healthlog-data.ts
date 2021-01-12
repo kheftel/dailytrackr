@@ -27,6 +27,9 @@ export interface LogItem {
   symptoms: {
     [key: string]: number;
   };
+  goodThings?: {
+    [key: string]: number;
+  };
   mitigations: string[];
   notes: string;
   uid?: string;
@@ -205,7 +208,7 @@ export class HealthlogData {
 
     if (data.uid !== this.user.uid) {
       throw new Error(
-        "updateLogItem: this item does not belong to current user"
+        `updateLogItem: this item (belongs to ${data.uid}) does not belong to current user (${this.user.uid})`
       );
     }
 

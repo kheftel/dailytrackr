@@ -16,7 +16,7 @@
     </ion-list>
 
     <ion-list formArrayName="symptoms" class="subtle-bottom-border">
-      <ion-item lines="none">
+      <ion-item class="item-header" lines="none">
         <ion-label>
           <h2>Symptoms:</h2>
         </ion-label>
@@ -24,7 +24,6 @@
           <ion-icon name="copy" slot="start"></ion-icon>Copy from prev
         </ion-button>
       </ion-item>
-
       <ng-container *ngFor="let symptom of symptoms.controls; let i=index">
         <ion-item-group [formGroupName]="i">
           <!-- <ion-item lines="none" class="header">
@@ -35,7 +34,6 @@
             <ion-label>Name:</ion-label>
             <ion-input formControlName="name" placeholder="brainfog, etc..."></ion-input>
             <ion-button slot="end" (click)="deleteSymptom(i)">Delete</ion-button>
-
           </ion-item>
           <ion-item>
             <ion-label>Value:</ion-label>
@@ -50,14 +48,43 @@
       </ion-item>
     </ion-list>
 
-    <ion-list formArrayName="mitigations" class="subtle-bottom-border">
+    <ion-list formArrayName="goodThings" class="subtle-bottom-border">
+      <ion-item class="item-header" lines="none">
+        <ion-label>
+          <h2>Good Things:</h2>
+        </ion-label>
+        <ion-button (click)="clickCopyFromPrevious('goodThings')">
+          <ion-icon name="copy" slot="start"></ion-icon>Copy from prev
+        </ion-button>
+      </ion-item>
+      <ng-container *ngFor="let symptom of goodThings.controls; let i=index">
+        <ion-item-group [formGroupName]="i">
+          <ion-item>
+            <ion-label>Name:</ion-label>
+            <ion-input formControlName="name" placeholder="productivity, etc..."></ion-input>
+            <ion-button slot="end" (click)="deleteGoodThing(i)">Delete</ion-button>
+          </ion-item>
+          <ion-item>
+            <ion-label>Value:</ion-label>
+            <ion-input type="number" formControlName="value" placeholder="1-10"></ion-input>
+          </ion-item>
+        </ion-item-group>
+      </ng-container>
       <ion-item lines="none">
+        <ion-button (click)="clickAddGoodThing()">
+          <ion-icon slot="start" name="add"></ion-icon>Add
+        </ion-button>
+      </ion-item>
+    </ion-list>
+
+    <ion-list formArrayName="mitigations" class="subtle-bottom-border">
+      <ion-item class="item-header" lines="none">
         <ion-label>
           <h2>Mitigations:</h2>
         </ion-label>
       </ion-item>
 
-      <ion-item-group>
+      <ion-item-group *ngIf="mitigations.controls && mitigations.controls.length > 0">
         <ion-item *ngFor="let mitigation of mitigations.controls; let i=index">
           <!-- <ion-label>Name:</ion-label> -->
           <ion-input [formControlName]="i" placeholder="What I tried..."></ion-input>
@@ -73,7 +100,7 @@
     </ion-list>
 
     <ion-list lines="none" class="subtle-bottom-border">
-      <ion-item lines="none">
+      <ion-item class="item-header" lines="none">
         <ion-label>
           <h2>Notes:</h2>
         </ion-label>

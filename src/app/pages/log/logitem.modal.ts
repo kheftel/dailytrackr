@@ -76,7 +76,7 @@ export class LogItemModal implements OnInit {
       console.log("modal edit mode: " + this.doc.id);
       console.log(this.doc.data());
 
-      const data = this.doc.data();
+      const data = this.doc.data() as LogItem;
 
       // construct the object to build the formgroup with from the passed-in data
       const formInitData: any = {
@@ -101,12 +101,29 @@ export class LogItemModal implements OnInit {
       }
       formInitData.symptoms = this.formBuilder.array(symptoms);
 
+      const goodThings = [];
+      for (const key in data.goodThings) {
+        symptoms.push(
+          this.formBuilder.group({
+            name: [key],
+            value: [data.goodThings[key]],
+          })
+        );
+      }
+      formInitData.goodThings = this.formBuilder.array(goodThings);
+
       // build the form
       this.formGroup = this.formBuilder.group(formInitData);
     } else {
       this.formGroup = this.formBuilder.group({
         time: [dNow.toISOString()],
         symptoms: this.formBuilder.array([
+          this.formBuilder.group({
+            name: [""],
+            value: [""],
+          }),
+        ]),
+        goodThings: this.formBuilder.array([
           this.formBuilder.group({
             name: [""],
             value: [""],
@@ -120,6 +137,10 @@ export class LogItemModal implements OnInit {
 
   get symptoms() {
     return this.formGroup.get("symptoms") as FormArray;
+  }
+
+  get goodThings() {
+    return this.formGroup.get("goodThings") as FormArray;
   }
 
   get mitigations() {
@@ -159,6 +180,30 @@ export class LogItemModal implements OnInit {
               ],
             })
             .then((alert) => alert.present());
+        } else if (which === "goodThings") {
+          const goodThings = doc.data().goodThings;
+          let gtString = "<br />";
+          Object.keys(goodThings).forEach((key) => {
+            gtString += "<br />" + key + ": " + goodThings[key];
+          });
+          this.alertCtrl
+            .create({
+              message: "Replace good things with this data?" + gtString,
+              buttons: [
+                {
+                  text: "Yes",
+                  handler: (v) => {
+                    this.replaceGoodThingsFromDoc(doc);
+                    console.log(v);
+                  },
+                },
+                {
+                  text: "No",
+                  role: "cancel",
+                },
+              ],
+            })
+            .then((alert) => alert.present());
         }
       } else {
         console.log("no previous entry found");
@@ -185,6 +230,19 @@ export class LogItemModal implements OnInit {
     });
   }
 
+  replaceGoodThingsFromDoc(doc) {
+    const goodThings = doc.data().goodThings;
+    this.goodThings.clear();
+    Object.keys(goodThings).forEach((key) => {
+      this.goodThings.push(
+        this.formBuilder.group({
+          name: [key],
+          value: [goodThings[key]],
+        })
+      );
+    });
+  }
+
   clickAddSymptom() {
     this.symptoms.push(
       this.formBuilder.group({
@@ -195,8 +253,22 @@ export class LogItemModal implements OnInit {
     console.log(this.symptoms.controls);
   }
 
+  clickAddGoodThing() {
+    this.goodThings.push(
+      this.formBuilder.group({
+        name: [""],
+        value: [""],
+      })
+    );
+    console.log(this.goodThings.controls);
+  }
+
   deleteSymptom(i) {
     this.symptoms.removeAt(i);
+  }
+
+  deleteGoodThing(i) {
+    this.goodThings.removeAt(i);
   }
 
   clickAddMitigation() {
@@ -217,17 +289,22 @@ export class LogItemModal implements OnInit {
         })
       ),
       symptoms: {},
+      goodThings: {},
       mitigations: [],
       notes: this.formGroup.value.notes,
     };
     for (const symptom of this.formGroup.value.symptoms) {
       if (symptom.name) data.symptoms[symptom.name] = symptom.value;
     }
+    for (const goodThing of this.formGroup.value.goodThings) {
+      if (goodThing.name) data.goodThings[goodThing.name] = goodThing.value;
+    }
     for (const mitigation of this.formGroup.value.mitigations) {
       if (mitigation) data.mitigations.push(mitigation);
     }
 
     if (this.doc) {
+      data.uid = this.doc.data().uid;
       this.logData.updateLogItem(this.doc.id, data).then((doc) => {
         const result: LogItemModalResult = {
           saved: true,

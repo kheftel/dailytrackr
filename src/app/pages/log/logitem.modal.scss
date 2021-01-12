@@ -2,11 +2,23 @@
   --background: rgba(var(--ion-color-medium-rgb), 0.25);
 }
 
+.item-header {
+  --background: var(--ion-color-step-100);
+    border-bottom: 1px solid var(--ion-color-step-150);
+}
+
 ion-item-group {
   margin: 8px;
   border: 1px solid var(--ion-color-step-300);
   border-radius: 8px;
   overflow: hidden;
+}
+
+ion-list {
+  padding: 0;
+  margin: 8px;
+  border: 1px solid var(--ion-color-step-300);
+  border-radius: 8px;
 }
 
 ion-label {

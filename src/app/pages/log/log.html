@@ -76,11 +76,19 @@
 
         <ion-item button (click)="edit(item)" lines="none">
           <ion-label>
-            <h3>Symptoms:</h3>
+            <ng-container *ngIf="hasKeys(item.data.symptoms)">
+              <h3>Symptoms:</h3>
+              <p class="symptom ion-color-{{symptom.severity}}" *ngFor="let symptom of prepSymptoms(item.data.symptoms)">
+                {{symptom.name}}:<ion-badge color="{{symptom.severity}}">{{symptom.value}}</ion-badge>
+              </p>
+            </ng-container>
 
-            <p class="symptom ion-color-{{symptom.severity}}" *ngFor="let symptom of prepSymptoms(item.data.symptoms)">
-              {{symptom.name}}:<ion-badge color="{{symptom.severity}}">{{symptom.value}}</ion-badge>
-            </p>
+            <ng-container *ngIf="hasKeys(item.data.goodThings)">
+              <h3>Good Things:</h3>
+              <p class="good-thing ion-color-{{goodThing.severity}}" *ngFor="let goodThing of prepGoodThings(item.data.goodThings)">
+                {{goodThing.name}}:<ion-badge color="{goodThing.severity}}">{{goodThing.value}}</ion-badge>
+              </p>
+            </ng-container>
 
             <h3 style="margin-top:10px" *ngIf="item.data.mitigations.length">Mitigations:</h3>
             <p *ngFor="let m of item.data.mitigations" class="symptom ion-color-medium">
