@@ -19,7 +19,7 @@ export interface LogItemDisplay {
   data: LogItem;
   doc: firebase.firestore.QueryDocumentSnapshot;
   showDatetime: boolean;
-  state: string;
+  state: 'new' | 'initial' | 'edited' | 'deleted';
 }
 
 export interface LogItem {
@@ -120,6 +120,28 @@ export class HealthlogData {
       );
   }
 
+  getStreamNoSearchQuery(
+    startAfter?: firebase.firestore.Timestamp,
+    max: number = 10
+  ) {
+    let uid;
+    if (this.user) {
+      uid = this.user.uid;
+    } else {
+      throw new Error("getStreamNoSearchValueChanges: not logged in");
+    }
+    const qFn: QueryFn = startAfter
+      ? (ref) =>
+          ref
+            .where("uid", "==", uid)
+            .orderBy("time", "desc")
+            .startAfter(startAfter)
+            .limit(max)
+      : (ref) => ref.where("uid", "==", uid).orderBy("time", "desc").limit(max);
+
+    return this.firestore.collection<LogItem>("healthlog", qFn);
+  }
+
   getStream(queryText = "", startAfter?: any, max: number = 10) {
     let uid;
     if (this.user) {
@@ -153,11 +175,18 @@ export class HealthlogData {
 
             let matches = false;
             const symptoms = doc.data().symptoms;
+            const goodThings = doc.data().goodThings;
             const mitigations = doc.data().mitigations;
             const time = format(doc.data().time.toDate(), "yyyy-MM-dd h:mm a");
             const notes = doc.data().notes || "";
             queryWords.forEach((word) => {
               for (const key in symptoms) {
+                if (key.toLowerCase().indexOf(word) > -1) {
+                  matches = true;
+                }
+                return;
+              }
+              for (const key in goodThings) {
                 if (key.toLowerCase().indexOf(word) > -1) {
                   matches = true;
                   return;

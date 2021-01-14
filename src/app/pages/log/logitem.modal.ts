@@ -103,7 +103,7 @@ export class LogItemModal implements OnInit {
 
       const goodThings = [];
       for (const key in data.goodThings) {
-        symptoms.push(
+        goodThings.push(
           this.formBuilder.group({
             name: [key],
             value: [data.goodThings[key]],
@@ -172,7 +172,7 @@ export class LogItemModal implements OnInit {
         console.log(doc.data());
 
         const formarrayData = doc.data()[which];
-        let formarrayName: string = this.formarrayGetName(which);
+        const formarrayName: string = this.formarrayGetName(which);
         if (!formarrayData) {
           // none found in previous entry
           return this.alertCtrl
@@ -252,7 +252,7 @@ export class LogItemModal implements OnInit {
     if (which !== "symptoms" && which !== "goodThings") {
       throw new Error("deleteFormarrayItem: invalid formArray " + which);
     }
-    let formarray: FormArray = this[which];
+    const formarray: FormArray = this[which];
 
     formarray.removeAt(i)
 

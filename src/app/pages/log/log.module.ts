@@ -6,6 +6,7 @@ import { IonicModule } from "@ionic/angular";
 import { LogPage } from "./log";
 import { LogPageRoutingModule } from "./log-routing.module";
 import { LogItemModal } from "./logitem.modal";
+import { LogItemComponent } from "./logitem.component";
 
 @NgModule({
   imports: [
@@ -15,7 +16,7 @@ import { LogItemModal } from "./logitem.modal";
     IonicModule,
     LogPageRoutingModule,
   ],
-  declarations: [LogPage, LogItemModal],
-  entryComponents: [LogItemModal],
+  declarations: [LogPage, LogItemModal, LogItemComponent],
+  entryComponents: [LogItemModal, LogItemComponent],
 })
 export class LogModule {}

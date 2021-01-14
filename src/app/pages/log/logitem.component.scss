@@ -1,0 +1,94 @@
+:host {
+  display: block
+}
+
+.symptom,
+.good-thing,
+.notes {
+  border-left: 2px solid var(--ion-color-base);
+  border-bottom: 1px solid var(--ion-color-base);
+  // background: rgba(var(--ion-color-base-rgb), 0.12);
+  color: var(--ion-text-color);
+  padding-left: 8px;
+}
+
+ion-label {
+  --padding-start: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+h2,
+h3 {
+  font-weight: 500;
+}
+
+ion-item {
+  --padding-start: 8px;
+
+  h3,
+  p {
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+
+  p {
+    position: relative;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    ion-badge {
+      vertical-align: middle;
+      margin-left: 4px;
+      color: white;
+      padding-left: 8px;
+      padding-right: 8px;
+      border-radius: 8px;
+      position: absolute;
+      right: 0;
+    }
+  }
+}
+
+ion-item-divider {
+  --padding-start: 8px;
+  --background: rgba(var(--ion-color-medium-rgb), 0.25);
+  --color: var(--ion-text-color);
+
+  border: none;
+
+  // border-top: none;
+  // border-bottom: 1px solid var(--ion-color-step-100);
+}
+
+// .header {
+//   --background: rgba(var(--ion-color-primary-rgb), 0.25);
+// }
+
+// .item-header {
+//   // --background: var(--ion-color-step-100);
+//     border-bottom: 1px solid var(--ion-color-step-150);
+// }
+
+// ion-item-group {
+//   margin: 8px;
+//   border: 1px solid var(--ion-color-step-150);
+//   border-radius: 8px;
+//   overflow: hidden;
+// }
+
+// ion-list {
+//   padding: 0;
+//   margin: 8px;
+//   border: 1px solid var(--ion-color-step-150);
+//   border-radius: 8px;
+// }
+
+// ion-label {
+//   --padding-start: 8px;
+//   margin-top: 8px;
+//   margin-bottom: 8px;
+// }
+
+// ion-item.add {
+//   --padding-start: 8px;
+// }

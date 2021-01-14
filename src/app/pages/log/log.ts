@@ -27,8 +27,8 @@ import {
   LogItem,
   LogItemDisplay,
 } from "../../providers/healthlog-data";
-import { Observable } from "rxjs";
-import { format } from "date-fns";
+import { Observable, Subscription } from "rxjs";
+import { format, startOfDay } from "date-fns";
 
 import firebase from "firebase/app";
 import "firebase/firestore";
@@ -110,11 +110,18 @@ export class LogPage implements OnInit, AfterViewInit {
   showSearchbar: boolean;
 
   dataList$: Observable<any[]>;
-  dataList: LogItemDisplay[] = [];
+  dataList: LogItemDisplay[];
 
-  batchSize: number = 5;
+  batchSize: number = 20;
   loading: boolean = false;
   noMoreData: boolean = false;
+
+  logSub: Subscription;
+  unsub: (() => void)[] = [];
+  numSnapshotEvents: number = 0;
+
+  db: firebase.firestore.Firestore;
+  user: firebase.User;
 
   // uid: string;
 
@@ -127,7 +134,7 @@ export class LogPage implements OnInit, AfterViewInit {
     public router: Router,
     public routerOutlet: IonRouterOutlet,
     public toastCtrl: ToastController,
-    public user: UserData,
+    public userData: UserData,
     public config: Config,
     private auth: AngularFireAuth
   ) {}
@@ -135,8 +142,11 @@ export class LogPage implements OnInit, AfterViewInit {
   ngOnInit() {
     this.ios = this.config.get("mode") === "ios";
 
+    this.db = firebase.firestore();
+
     this.auth.authState.subscribe((u) => {
       console.log("log: logged in: " + !!u);
+      this.user = u;
       if (u) {
         this.refreshDataList();
       }
@@ -165,53 +175,233 @@ export class LogPage implements OnInit, AfterViewInit {
 
     // if (!this.uid) throw new Error("missing uid");
 
-    const tmpList: LogItemDisplay[] = [];
+    if (this.logSub) {
+      this.logSub.unsubscribe();
+      this.logSub = null;
+    }
+    if (this.unsub) {
+      for (const f of this.unsub) {
+        f();
+      }
+      this.unsub = [];
+    }
+    this.numSnapshotEvents = 0;
     if (this.infiniteScroll) this.infiniteScroll.disabled = false;
     this.noMoreData = false;
     this.loading = true;
-    this.logData
-      .getStream(this.queryText, null, this.batchSize)
-      .subscribe((docs) => {
-        this.loading = false;
-        // first batch of items is loaded
 
-        // no more? disable
-        if (docs.length === 0) {
-          if (this.infiniteScroll) {
-            this.infiniteScroll.complete();
-            this.infiniteScroll.disabled = true;
-          }
-          this.noMoreData = true;
-          if (fromRefresher) {
-            this.refresher.complete();
-          }
-          return;
-        }
+    if (!this.queryText) {
+      console.log("log: no search terms, subscribing to updates");
 
-        console.log("loaded " + docs.length);
-        docs.forEach((doc) => {
-          tmpList.push(this.docToLogItem(doc));
-        });
-        this.prepList(tmpList);
-        this.dataList = tmpList;
-        console.log("data list length = " + this.dataList.length);
+      this.unsub.push(
+        this.db
+          .collection("healthlog")
+          .where("uid", "==", this.user.uid)
+          .orderBy("time", "desc")
+          .limit(this.batchSize)
+          .onSnapshot((qs) => {
+            // // no more? disable
+            // if (docs.length === 0) {
+            //   if (this.infiniteScroll) {
+            //     this.infiniteScroll.complete();
+            //     this.infiniteScroll.disabled = true;
+            //   }
+            //   this.noMoreData = true;
+            //   if (fromRefresher) {
+            //     this.refresher.complete();
+            //   }
+            //   return;
+            // }
 
-        if (fromRefresher) {
-          this.refresher.complete();
-        }
+            this.numSnapshotEvents++;
+            console.log(
+              `log: batch listener 1, event #${this.numSnapshotEvents}`
+            );
 
-        // make it load more if needed because of a bug in infinite scroll
-        if (this.infiniteScroll) {
-          this.infiniteScroll.complete();
-        }
-        this.checkContentTooShortToScroll();
-      });
+            this.loading = false;
+            const tmpList: LogItemDisplay[] = [];
 
-    // this.dataList$ = this.logData.getDayList();
+            qs.docChanges().forEach((change) => {
+              let id = change.doc.id;
+              let data: LogItem = change.doc.data() as LogItem;
+              let time = data.time.toDate().toISOString();
+              let existingItem = this.getItem(id);
+              console.log(
+                `log: change: ${change.type} ${id} ${time} ${change.oldIndex} ${change.newIndex}:`
+              );
 
-    // this.dataList$.subscribe(list => {
-    //   console.log(list);
-    // });
+              switch (change.type) {
+                case "added":
+                  // initial load?
+                  if (this.numSnapshotEvents === 1) {
+                    tmpList.push(this.docToLogItem(change.doc));
+                  } else {
+                    // does it already exist in the list? (this shouldn't happen)
+                    if (existingItem) {
+                      // modify it
+                      existingItem.data = data;
+                    } else {
+                      // add it
+                      console.log("log: added new item at beginning of list");
+                      console.log(data);
+                      this.dataList.unshift(this.docToLogItem(change.doc, true));
+                    }
+                  }
+                  break;
+                case "modified":
+                  // find it in list and modify it
+                  if (existingItem) {
+                    // make sure that the data actually changed???
+                    existingItem.data = { ...data };
+                    existingItem.state = "edited";
+                  }
+                  break;
+                case "removed":
+                  // it's been deleted! remove from list
+                  if (existingItem) {
+                    existingItem.state = "deleted";
+                  }
+                  break;
+              }
+
+              // switch (data.action) {
+              //   case "add":
+              //     item = this.docToLogItem(data.doc);
+              //     item.state = "new";
+              //     this.dataList.unshift(item);
+
+              //     // sort the list, add headers
+              //     this.prepList(this.dataList);
+              //     break;
+              //   case "update":
+              //     console.log("log: updated item: " + data.doc.id);
+              //     console.log(data.doc.data());
+
+              //     item = this.getItem(data.doc.id);
+              //     item.doc = data.doc;
+              //     item.data = item.doc.data() as LogItem;
+              //     item.state = "edited";
+              //     break;
+              //   case "delete":
+              //     console.log("log: deleted:");
+              //     console.log(data.deletedId);
+
+              //     // remove from the list after animation
+              //     item = this.getItem(data.deletedId);
+              //     item.state = "deleted";
+              //     break;
+              // }
+            });
+
+            if (this.numSnapshotEvents === 1) {
+              // on initial load, everything is in tmpList, just need to prep and assign it to the viewmodel
+              this.prepList(tmpList);
+              this.dataList = tmpList;
+            } else {
+              // not using tmplist, so just prep the datalist
+              this.prepList(this.dataList);
+            }
+            console.log("data list length = " + this.dataList.length);
+
+            if (fromRefresher) {
+              this.refresher.complete();
+            }
+
+            // make it load more if needed because of a bug in infinite scroll
+            // if (this.infiniteScroll) {
+            //   this.infiniteScroll.complete();
+            // }
+            // this.checkContentTooShortToScroll();
+          })
+      );
+
+      // would love to use angularfire for this but it has
+      // too many weird duplicate modification events
+      // for my tastes. rather than dig any further
+      // i'm just gonna use firebase sdk
+      // this.logSub = this.logData
+      //   .getStreamNoSearchQuery(null, this.batchSize)
+      //   .stateChanges()
+      //   .subscribe((changes) => {
+      //     // first batch of items is loaded
+      //     changes.forEach((change) => {
+      //       let id = change.payload.doc.id;
+      //       let data = change.payload.doc.data();
+      //       let time = data.time.toDate().toISOString();
+      //       let oldItem = this.getItem(id);
+      //       let oldData = oldItem ? oldItem.data : null;
+
+      //       let isRealChange = true;
+      //       if (change.type === "modified") {
+      //         if (JSON.stringify(data) == JSON.stringify(oldData)) {
+      //           isRealChange = false;
+      //         }
+      //         if (
+      //           change.payload.doc.metadata.fromCache ||
+      //           change.payload.doc.metadata.hasPendingWrites
+      //         ) {
+      //           isRealChange = false;
+      //         }
+      //       }
+
+      //       if (isRealChange) {
+      //         console.log(
+      //           `log: afs change: ${change.type} ${id} ${time} ${change.payload.oldIndex} ${change.payload.newIndex}:`
+      //         );
+      //         console.log(data);
+      //         console.log(oldData);
+      //       }
+      //     });
+      //   });
+    }
+
+    // this.logData
+    //   .getStream(this.queryText, null, this.batchSize)
+    //   .subscribe((docs) => {
+    //     this.loading = false;
+    //     // first batch of items is loaded
+
+    //     // no more? disable
+    //     if (docs.length === 0) {
+    //       if (this.infiniteScroll) {
+    //         this.infiniteScroll.complete();
+    //         this.infiniteScroll.disabled = true;
+    //       }
+    //       this.noMoreData = true;
+    //       if (fromRefresher) {
+    //         this.refresher.complete();
+    //       }
+    //       return;
+    //     }
+
+    //     console.log("loaded " + docs.length);
+    //     // let days:any = {};
+    //     docs.forEach((doc) => {
+    //       tmpList.push(this.docToLogItem(doc));
+
+    //       // let curTime = doc.data().time.toDate();
+    //       // let date = startOfDay(curTime);
+    //       // let label = this.formatDate(date);
+    //       // if(days[label] == null) days[label] = 0;
+    //       // days[label]++;
+    //     });
+
+    //     this.prepList(tmpList);
+    //     this.dataList = tmpList;
+    //     console.log("data list length = " + this.dataList.length);
+
+    //     // console.log(days);
+
+    //     if (fromRefresher) {
+    //       this.refresher.complete();
+    //     }
+
+    //     // make it load more if needed because of a bug in infinite scroll
+    //     if (this.infiniteScroll) {
+    //       this.infiniteScroll.complete();
+    //     }
+    //     this.checkContentTooShortToScroll();
+    //   });
 
     this.confData
       .getTimeline(
@@ -276,22 +466,27 @@ export class LogPage implements OnInit, AfterViewInit {
     }, 0);
   }
 
-  docToLogItem(doc: firebase.firestore.QueryDocumentSnapshot): LogItemDisplay {
+  docToLogItem(
+    doc: firebase.firestore.QueryDocumentSnapshot,
+    shouldAnimate: boolean = false
+  ): LogItemDisplay {
     const item: LogItemDisplay = {
       data: doc.data() as LogItem,
       doc: doc,
       showDatetime: false,
-      state: "initial",
+      state: shouldAnimate ? "new" : "initial",
     };
 
     return item;
   }
 
   getItem(id: string) {
+    if (!this.dataList) return null;
     return this.dataList.find((v) => v.doc.id === id);
   }
 
   getItemIndex(id: string) {
+    if (!this.dataList) return -1;
     return this.dataList.findIndex((v) => v.doc.id === id);
   }
 
@@ -305,6 +500,7 @@ export class LogPage implements OnInit, AfterViewInit {
   }
 
   edit(item: LogItemDisplay) {
+    console.log("log: edit");
     this.modalCtrl
       .create({
         component: LogItemModal,
@@ -314,7 +510,9 @@ export class LogPage implements OnInit, AfterViewInit {
         },
       })
       .then((modal) => {
+        console.log("log: presenting modal");
         modal.present();
+        console.log("log: modal presented");
         modal.onWillDismiss().then((result) => {
           this.onModalDismissed(result.data);
         });
@@ -337,6 +535,7 @@ export class LogPage implements OnInit, AfterViewInit {
   }
 
   onModalDismissed(data: LogItemModalResult) {
+    console.log("log: modal dismissed");
     if (data && data.saved) {
       this.toastCtrl
         .create({
@@ -352,58 +551,36 @@ export class LogPage implements OnInit, AfterViewInit {
         .then((toast) => {
           toast.present();
 
-          console.log(data.action);
-          let item: LogItemDisplay;
-          switch (data.action) {
-            case "add":
-              item = this.docToLogItem(data.doc);
-              item.state = "new";
-              this.dataList.unshift(item);
+          // console.log(data.action);
+          //   let item: LogItemDisplay;
+          //   switch (data.action) {
+          //     case "add":
+          //       item = this.docToLogItem(data.doc);
+          //       item.state = "new";
+          //       this.dataList.unshift(item);
 
-              // sort the list, add headers
-              this.prepList(this.dataList);
-              break;
-            case "update":
-              console.log("log: updated item: " + data.doc.id);
-              console.log(data.doc.data());
+          //       // sort the list, add headers
+          //       this.prepList(this.dataList);
+          //       break;
+          //     case "update":
+          //       console.log("log: updated item: " + data.doc.id);
+          //       console.log(data.doc.data());
 
-              item = this.getItem(data.doc.id);
-              item.doc = data.doc;
-              item.data = item.doc.data() as LogItem;
-              item.state = "edited";
-              break;
-            case "delete":
-              console.log("log: deleted:");
-              console.log(data.deletedId);
+          //       item = this.getItem(data.doc.id);
+          //       item.doc = data.doc;
+          //       item.data = item.doc.data() as LogItem;
+          //       item.state = "edited";
+          //       break;
+          //     case "delete":
+          //       console.log("log: deleted:");
+          //       console.log(data.deletedId);
 
-              // remove from the list after animation
-              item = this.getItem(data.deletedId);
-              item.state = "deleted";
-              break;
-          }
+          //       // remove from the list after animation
+          //       item = this.getItem(data.deletedId);
+          //       item.state = "deleted";
+          //       break;
+          //   }
         });
-    }
-  }
-
-  onAnimationEnd(event) {
-    // console.log("animation event");
-    // console.log(event);
-    // console.log(event.element.id);
-
-    if (event.toState === "deleted") {
-      console.log("deleted: " + event.element.id);
-      // remove from array
-      const index = this.getItemIndex(event.element.id);
-      if (index >= 0) {
-        this.dataList.splice(index, 1);
-        this.prepList(this.dataList);
-      }
-    }
-
-    // go back to initial state after editing
-    if (event.toState === "edited") {
-      const item = this.getItem(event.element.id);
-      item.state = "initial";
     }
   }
 
@@ -430,7 +607,7 @@ export class LogPage implements OnInit, AfterViewInit {
   }
 
   hasKeys(obj?: any) {
-    if(!obj) return false;
+    if (!obj) return false;
     return Object.keys(obj).length > 0;
   }
 
@@ -481,6 +658,7 @@ export class LogPage implements OnInit, AfterViewInit {
         : null;
     const tmpList = [];
     this.loading = true;
+
     this.logData
       .getStream(this.queryText, last, this.batchSize)
       .subscribe((docs) => {
@@ -503,12 +681,60 @@ export class LogPage implements OnInit, AfterViewInit {
         });
         this.dataList = this.dataList.concat(tmpList);
         this.prepList(this.dataList);
-        console.log("data list length = " + this.dataList.length);
+        console.log("log: data list length = " + this.dataList.length);
         if (this.infiniteScroll) {
           this.infiniteScroll.complete();
         }
         this.checkContentTooShortToScroll();
       });
+
+    const listenerId: number = this.unsub.length + 1;
+    this.unsub.push(
+      this.db
+        .collection("healthlog")
+        .where("uid", "==", this.user.uid)
+        .orderBy("time", "desc")
+        .startAfter(last)
+        .limit(this.batchSize)
+        .onSnapshot((qs) => {
+          console.log("log: listener " + listenerId + " ------------------");
+          qs.docChanges().forEach((change) => {
+            let id = change.doc.id;
+            let data = change.doc.data();
+            let time = data.time.toDate().toISOString();
+            console.log(
+              `log: change: ${change.type} ${id} ${time} ${change.oldIndex} ${change.newIndex}:`
+            );
+            // console.log(data);
+          });
+        })
+    );
+  }
+
+  onAnimationEnd(event) {
+    // console.log("animation event");
+    // console.log(event);
+    // console.log(event.element.id);
+
+    console.log(
+      "logitem: animationend: " + event.toState + ": " + event.element.id
+    );
+
+    switch (event.toState) {
+      case "deleted":
+        // remove from model and view
+        const index = this.getItemIndex(event.element.id);
+        if (index >= 0) {
+          this.dataList.splice(index, 1);
+          this.prepList(this.dataList);
+        }
+        break;
+      case "edited":
+        // go back to initial state after editing
+        const item = this.getItem(event.element.id);
+        item.state = "initial";
+        break;
+    }
   }
 
   async presentFilter() {
@@ -528,12 +754,12 @@ export class LogPage implements OnInit, AfterViewInit {
   }
 
   async addFavorite(slidingItem: HTMLIonItemSlidingElement, sessionData: any) {
-    if (this.user.hasFavorite(sessionData.name)) {
+    if (this.userData.hasFavorite(sessionData.name)) {
       // Prompt to remove favorite
       this.removeFavorite(slidingItem, sessionData, "Favorite already added");
     } else {
       // Add as a favorite
-      this.user.addFavorite(sessionData.name);
+      this.userData.addFavorite(sessionData.name);
 
       // Close the open item
       slidingItem.close();
@@ -576,7 +802,7 @@ export class LogPage implements OnInit, AfterViewInit {
           text: "Remove",
           handler: () => {
             // they want to remove this session from their favorites
-            this.user.removeFavorite(sessionData.name);
+            this.userData.removeFavorite(sessionData.name);
             this.refreshDataList();
 
             // close the sliding item and hide the option buttons
