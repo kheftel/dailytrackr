@@ -80,9 +80,9 @@ import { th } from "date-fns/locale";
           filter: "brightness(150%)",
         })
       ),
-      transition("new => initial", [animate("500ms 250ms ease-out")]),
-      transition("initial => deleted", [animate("500ms 250ms ease-in")]),
-      transition("initial => edited", [animate("250ms 250ms ease-out")]),
+      transition("new => initial", [animate("500ms 500ms ease-out")]),
+      transition("initial => deleted", [animate("500ms 500ms ease-in")]),
+      transition("initial => edited", [animate("250ms 500ms ease-out")]),
       transition("edited => initial", [animate("250ms ease-out")]),
     ]),
   ],
@@ -513,7 +513,7 @@ export class LogPage implements OnInit, AfterViewInit {
         console.log("log: presenting modal");
         modal.present();
         console.log("log: modal presented");
-        modal.onWillDismiss().then((result) => {
+        modal.onDidDismiss().then((result) => {
           this.onModalDismissed(result.data);
         });
       });
@@ -528,7 +528,7 @@ export class LogPage implements OnInit, AfterViewInit {
       })
       .then((modal) => {
         modal.present();
-        modal.onWillDismiss().then((result) => {
+        modal.onDidDismiss().then((result) => {
           this.onModalDismissed(result.data);
         });
       });
