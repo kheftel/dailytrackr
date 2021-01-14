@@ -57,11 +57,11 @@ export interface LogItemModalResult {
   styleUrls: ["./logitem.component.scss"],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LogItemComponent implements OnInit {
+export class LogItemComponent {
   formGroup: FormGroup;
 
   @Input() item: LogItem;
-  
+
   _state: string;
   @Input()
   set state(v: string) {
@@ -73,10 +73,6 @@ export class LogItemComponent implements OnInit {
 
   @Output()
   edit: EventEmitter<LogItem> = new EventEmitter<LogItem>();
-
-  constructor() {}
-
-  ngOnInit(): void {}
 
   onClick() {
     this.edit.emit(this.item);
