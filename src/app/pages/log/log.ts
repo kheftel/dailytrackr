@@ -331,7 +331,7 @@ export class LogPage implements OnInit, AfterViewInit {
                           console.log(
                             `log: item moved from ${oldIndex} to ${newIndex}`
                           );
-                          let duration = 5000;
+                          let duration = 1000;
                           if (newIndex - 1 === oldIndex) {
                             // moved down one
                             let hOld = this.getItemHeightByIndex(oldIndex);
