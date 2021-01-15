@@ -67,13 +67,13 @@
   <ion-list lines="none" #logList *ngIf="dataList && dataList.length > 0">
 
     <ng-container *ngFor="let item of dataList">
-      <ng-container *ngIf="item.showDatetime">
+      <!-- <ng-container *ngIf="item.showDatetime">
         <ion-item-divider color="primary" class="date" sticky>
           <ion-label>
             <h2>{{formatDate(item.data.time)}}</h2>
           </ion-label>
         </ion-item-divider>
-      </ng-container>
+      </ng-container> -->
 
       <app-logitem [logItem]="item.data" [logItemId]="item.doc.id" [id]="item.doc.id" (edit)="onClickEdit($event)" [state]="item.state" [@itemState]="item.state" (@itemState.done)="onAnimationEnd($event)"></app-logitem>
 

@@ -41,6 +41,7 @@ import {
   LogItem,
   LogItemDisplay,
 } from "../../providers/healthlog-data";
+import { DateUtil } from "../../util/DateUtil";
 import { LogItemModal } from "./logitem.modal";
 
 export interface LogItemModalResult {
@@ -57,12 +58,20 @@ export interface LogItemModalResult {
   styleUrls: ["./logitem.component.scss"],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LogItemComponent {
+export class LogItemComponent implements OnInit {
   formGroup: FormGroup;
 
   @Input() logItemId: string;
 
-  @Input() logItem: LogItem;
+  _logItem: LogItem;
+  @Input() set logItem(item) {
+    this._logItem = item;
+    this.title = DateUtil.formatDateTime(this.logItem.time);
+    this.markForCheck();
+  }
+  get logItem(): LogItem {
+    return this._logItem;
+  }
 
   _state: string;
   @Input()
@@ -79,7 +88,13 @@ export class LogItemComponent {
     id: string;
   }>();
 
+  title: string;
+
   constructor(private cdr: ChangeDetectorRef) {}
+
+  ngOnInit() {
+    this.title = DateUtil.formatDateTime(this.logItem.time);
+  }
 
   markForCheck() {
     this.cdr.markForCheck();
@@ -87,12 +102,6 @@ export class LogItemComponent {
 
   onClick() {
     this.edit.emit({ id: this.logItemId, logItem: this.logItem });
-  }
-
-  formatTime(t: Date | firebase.firestore.Timestamp) {
-    if (t instanceof firebase.firestore.Timestamp) t = t.toDate();
-
-    return format(t, "h:mm a");
   }
 
   keys(obj: any) {

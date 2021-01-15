@@ -51,7 +51,7 @@ ion-item {
 
 ion-item-divider {
   --padding-start: 8px;
-  --background: rgba(var(--ion-color-medium-rgb), 0.25);
+  --background: var(--ion-color-step-100);
   --color: var(--ion-text-color);
 
   border: none;

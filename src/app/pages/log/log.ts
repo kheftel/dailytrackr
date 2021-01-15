@@ -48,6 +48,8 @@ import {
 } from "@angular/animations";
 import { AngularFireAuth } from "@angular/fire/auth";
 import { LogItemComponent } from "./logitem.component";
+import { DateUtil } from "../../util/DateUtil";
+import { fi } from "date-fns/locale";
 
 @Component({
   selector: "page-log",
@@ -118,7 +120,7 @@ export class LogPage implements OnInit, AfterViewInit {
   dataList$: Observable<any[]>;
   dataList: LogItemDisplay[];
 
-  batchSize: number = 50;
+  batchSize: number = 20;
   loading: boolean = false;
   noMoreData: boolean = false;
 
@@ -182,6 +184,7 @@ export class LogPage implements OnInit, AfterViewInit {
 
     // if (!this.uid) throw new Error("missing uid");
 
+    // destroy old subscriptions
     if (this.logSub) {
       this.logSub.unsubscribe();
       this.logSub = null;
@@ -192,6 +195,8 @@ export class LogPage implements OnInit, AfterViewInit {
       }
       this.unsub = [];
     }
+
+    // set state
     this.numSnapshotEvents = 0;
     if (this.infiniteScroll) this.infiniteScroll.disabled = false;
     this.noMoreData = false;
@@ -200,6 +205,7 @@ export class LogPage implements OnInit, AfterViewInit {
     if (!this.queryText) {
       console.log("log: no search terms, subscribing to updates");
 
+      // subscribe to updates
       this.unsub.push(
         this.db
           .collection("healthlog")
@@ -228,6 +234,21 @@ export class LogPage implements OnInit, AfterViewInit {
             this.loading = false;
             const tmpList: LogItemDisplay[] = [];
 
+            // on intial load, just add everything to the list and be done
+            if (this.numSnapshotEvents === 1) {
+              qs.docChanges().forEach((change) => {
+                tmpList.push(this.docToLogItem(change.doc));
+              });
+              this.prepList(tmpList);
+              this.dataList = tmpList;
+              if (fromRefresher) {
+                this.refresher.complete();
+              }
+              return;
+            }
+
+            let needPrepList: boolean = false;
+            // on subsequent loads, process changes individually
             qs.docChanges().forEach((change) => {
               let id = change.doc.id;
               let data: LogItem = change.doc.data() as LogItem;
@@ -241,24 +262,18 @@ export class LogPage implements OnInit, AfterViewInit {
 
               switch (change.type) {
                 case "added":
-                  // initial load?
-                  if (this.numSnapshotEvents === 1) {
-                    tmpList.push(this.docToLogItem(change.doc));
+                  // does it already exist in the list? (this shouldn't happen)
+                  if (existingItem) {
+                    // modify it
+                    existingItem.data = data;
+                    existingItem.doc = change.doc;
                   } else {
-                    // does it already exist in the list? (this shouldn't happen)
-                    if (existingItem) {
-                      // modify it
-                      existingItem.data = data;
-                      existingItem.doc = change.doc;
-                    } else {
-                      // add it
-                      console.log("log: added new item at beginning of list");
-                      console.log(data);
-                      this.dataList.unshift(
-                        this.docToLogItem(change.doc, true)
-                      );
-                    }
+                    // add it
+                    console.log("log: added new item at beginning of list");
+                    console.log(data);
+                    this.dataList.unshift(this.docToLogItem(change.doc, true));
                   }
+                  needPrepList = true;
                   break;
                 case "modified":
                   // find it in list and modify it
@@ -296,22 +311,81 @@ export class LogPage implements OnInit, AfterViewInit {
 
                     // make sure that the data actually changed???
 
-                    // did it change order?
-                    if (
-                      change.oldIndex >= 0 &&
-                      change.newIndex >= 0 &&
-                      change.oldIndex !== change.newIndex
-                    ) {
-                      console.log(
-                        "log: item moved from " +
-                          change.oldIndex +
-                          " to " +
-                          change.newIndex
-                      );
-                    }
-
+                    // change the data to cause a re-calculation of height
                     existingItem.data = { ...data };
-                    existingItem.state = "edited";
+                    let c = this.getItemComponentById(change.doc.id);
+                    c.markForCheck();
+                    if (change.oldIndex === change.newIndex) {
+                      existingItem.state = "edited";
+                    } else {
+                      // wait a frame for heights to be recalculated
+                      setTimeout(() => {
+                        // did it change order?
+                        let oldIndex: number = change.oldIndex;
+                        let newIndex: number = change.newIndex;
+                        if (
+                          oldIndex >= 0 &&
+                          newIndex >= 0 &&
+                          oldIndex !== newIndex
+                        ) {
+                          console.log(
+                            `log: item moved from ${oldIndex} to ${newIndex}`
+                          );
+                          let duration = 5000;
+                          if (newIndex - 1 === oldIndex) {
+                            // moved down one
+                            let hOld = this.getItemHeightByIndex(oldIndex);
+                            let hNew = this.getItemHeightByIndex(newIndex);
+                            this.shiftItemElementY(oldIndex, hNew, duration);
+                            this.shiftItemElementY(
+                              newIndex,
+                              -1 * hOld,
+                              duration,
+                              () => {
+                                console.log("log: tween end");
+                                // re lay out the list
+                                this.prepList(this.dataList);
+                                setTimeout(() => {
+                                  existingItem.state = "edited";
+                                  // this.getItemComponentById(
+                                  //   existingItem.doc.id
+                                  // ).markForCheck();
+                                }, 0);
+                              }
+                            );
+                          } else if (newIndex + 1 === oldIndex) {
+                            // moved up one
+                            let hOld = this.getItemHeightByIndex(oldIndex);
+                            let hNew = this.getItemHeightByIndex(newIndex);
+                            this.shiftItemElementY(
+                              oldIndex,
+                              -1 * hNew,
+                              duration
+                            );
+                            this.shiftItemElementY(
+                              newIndex,
+                              hOld,
+                              duration,
+                              () => {
+                                console.log("log: tween end");
+                                // re lay out the list
+                                this.prepList(this.dataList);
+                                setTimeout(() => {
+                                  existingItem.state = "edited";
+                                  // this.getItemComponentById(
+                                  //   existingItem.doc.id
+                                  // ).markForCheck();
+                                }, 0);
+                              }
+                            );
+                          } else {
+                            existingItem.state = "edited";
+                          }
+                        } else {
+                          existingItem.state = "edited";
+                        }
+                      }, 0);
+                    }
                   }
                   break;
                 case "removed":
@@ -319,6 +393,7 @@ export class LogPage implements OnInit, AfterViewInit {
                   if (existingItem) {
                     existingItem.state = "deleted";
                   }
+                  needPrepList = true;
                   break;
               }
 
@@ -351,15 +426,9 @@ export class LogPage implements OnInit, AfterViewInit {
               // }
             });
 
-            if (this.numSnapshotEvents === 1) {
-              // on initial load, everything is in tmpList, just need to prep and assign it to the viewmodel
-              this.prepList(tmpList);
-              this.dataList = tmpList;
-            } else {
-              // not using tmplist, so just prep the datalist
+            if (needPrepList) {
               this.prepList(this.dataList);
             }
-            console.log("data list length = " + this.dataList.length);
 
             if (fromRefresher) {
               this.refresher.complete();
@@ -499,6 +568,10 @@ export class LogPage implements OnInit, AfterViewInit {
     }, 1);
   }
 
+  sortByTime(a: LogItemDisplay, b: LogItemDisplay) {
+    a.data.time.valueOf() > b.data.time.valueOf() ? -1 : 1;
+  }
+
   prepList(list: LogItemDisplay[]) {
     list.sort((a, b) =>
       a.data.time.valueOf() > b.data.time.valueOf() ? -1 : 1
@@ -508,8 +581,8 @@ export class LogPage implements OnInit, AfterViewInit {
       const item = list[i];
       if (i > 0) {
         const lastItem = list[i - 1];
-        const curDate = this.formatDate(item.data.time);
-        const lastDate = this.formatDate(lastItem.data.time);
+        const curDate = DateUtil.formatDate(item.data.time);
+        const lastDate = DateUtil.formatDate(lastItem.data.time);
         item.showDatetime = curDate !== lastDate;
       } else {
         item.showDatetime = true;
@@ -538,14 +611,50 @@ export class LogPage implements OnInit, AfterViewInit {
     return item;
   }
 
-  getItem(id: string) {
+  getItem(id: string): LogItemDisplay {
     if (!this.dataList) return null;
     return this.dataList.find((v) => v.doc.id === id);
   }
 
-  getItemIndex(id: string) {
+  getItemIndex(id: string): number {
     if (!this.dataList) return -1;
     return this.dataList.findIndex((v) => v.doc.id === id);
+  }
+
+  getItemComponentById(id: string): LogItemComponent {
+    return this.listItems.find((c) => c.logItemId === id);
+  }
+
+  getItemComponentByIndex(index: number): LogItemComponent {
+    return this.listItems.find((c, i) => i === index);
+  }
+
+  getItemElementForComponent(c: LogItemComponent): HTMLElement {
+    if (!c) return null;
+    return this.getItemElementById(c.logItemId);
+  }
+
+  getItemElementById(id: string): HTMLElement {
+    return document.getElementById(id);
+  }
+
+  getItemElementByIndex(index: number): HTMLElement {
+    let c = this.getItemComponentByIndex(index);
+    return this.getItemElementForComponent(c);
+  }
+
+  getItemElementHeightById(id: string) {
+    let elem = this.getItemElementById(id);
+    if (elem) return elem.clientHeight;
+    return 0;
+  }
+
+  getItemHeightByIndex(index: number) {
+    let c = this.getItemComponentByIndex(index);
+    if (!c) return 0;
+    let elem = this.getItemElementById(c.logItemId);
+    if (!elem) return 0;
+    return elem.clientHeight;
   }
 
   patchItem(item: LogItemDisplay) {
@@ -644,24 +753,6 @@ export class LogPage implements OnInit, AfterViewInit {
           //   }
         });
     }
-  }
-
-  formatTime(t: Date | firebase.firestore.Timestamp) {
-    if (t instanceof firebase.firestore.Timestamp) t = t.toDate();
-
-    return format(t, "h:mm a");
-  }
-
-  formatDateTime(t: Date | firebase.firestore.Timestamp) {
-    if (t instanceof firebase.firestore.Timestamp) t = t.toDate();
-
-    return format(t, "yyyy-MM-dd h:mm a");
-  }
-
-  formatDate(t: Date | firebase.firestore.Timestamp) {
-    if (t instanceof firebase.firestore.Timestamp) t = t.toDate();
-
-    return format(t, "yyyy-MM-dd");
   }
 
   keys(obj: any) {
@@ -773,6 +864,38 @@ export class LogPage implements OnInit, AfterViewInit {
     );
   }
 
+  shiftItemElementY(
+    index: number,
+    px: number,
+    milliseconds: number,
+    onComplete?: () => void
+  ) {
+    let seconds: number = milliseconds / 1000;
+    let elem = this.getItemElementByIndex(index);
+
+    // markForCheck??
+
+    // zero out transform
+    gsap.set(elem, { y: 0 });
+
+    // tween to desired end
+    gsap.to(elem, { y: px, duration: seconds });
+
+    // do things when tween ends
+    gsap.delayedCall(seconds, () => {
+      // call oncomplete, which should re-order and re-render the list
+      if (onComplete) {
+        onComplete();
+      }
+
+      // reset transform (might need to be next frame??)
+      this.renderer.setStyle(elem, 'transform', 'none');
+      // gsap.set(elem, { y: 0 });
+
+      // markForCheck??
+    });
+  }
+
   shiftListY(
     px: number,
     seconds: number,
@@ -854,6 +977,8 @@ export class LogPage implements OnInit, AfterViewInit {
         }
         break;
       case "edited":
+        // cList.forEach((c, i) => console.log(this.getItemHeightByIndex(i)));
+
         // go back to initial state after editing
         const item = this.getItem(event.element.id);
         item.state = "initial";
