@@ -60,7 +60,9 @@ export interface LogItemModalResult {
 export class LogItemComponent {
   formGroup: FormGroup;
 
-  @Input() item: LogItem;
+  @Input() logItemId: string;
+
+  @Input() logItem: LogItem;
 
   _state: string;
   @Input()
@@ -72,10 +74,19 @@ export class LogItemComponent {
   }
 
   @Output()
-  edit: EventEmitter<LogItem> = new EventEmitter<LogItem>();
+  edit: EventEmitter<{ logItem: LogItem; id: string }> = new EventEmitter<{
+    logItem: LogItem;
+    id: string;
+  }>();
+
+  constructor(private cdr: ChangeDetectorRef) {}
+
+  markForCheck() {
+    this.cdr.markForCheck();
+  }
 
   onClick() {
-    this.edit.emit(this.item);
+    this.edit.emit({ id: this.logItemId, logItem: this.logItem });
   }
 
   formatTime(t: Date | firebase.firestore.Timestamp) {

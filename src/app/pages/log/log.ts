@@ -4,6 +4,9 @@ import {
   OnInit,
   ElementRef,
   AfterViewInit,
+  ViewChildren,
+  QueryList,
+  Renderer2,
 } from "@angular/core";
 import { Router } from "@angular/router";
 import {
@@ -33,9 +36,10 @@ import { format, startOfDay } from "date-fns";
 import firebase from "firebase/app";
 import "firebase/firestore";
 import { LogItemModal, LogItemModalResult } from "./logitem.modal";
-import { TweenLite } from "gsap";
+import { gsap } from "gsap";
 import {
   animate,
+  AnimationEvent,
   keyframes,
   state,
   style,
@@ -43,7 +47,7 @@ import {
   trigger,
 } from "@angular/animations";
 import { AngularFireAuth } from "@angular/fire/auth";
-import { th } from "date-fns/locale";
+import { LogItemComponent } from "./logitem.component";
 
 @Component({
   selector: "page-log",
@@ -68,7 +72,7 @@ import { th } from "date-fns/locale";
       state(
         "initial",
         style({
-          transform: "scale(1)",
+          transform: "none",
           filter: "none",
           // opacity: 1,
         })
@@ -89,13 +93,15 @@ import { th } from "date-fns/locale";
 })
 export class LogPage implements OnInit, AfterViewInit {
   // Gets a reference to the list element
-  @ViewChild("logList", { static: true }) logList: ElementRef;
+  @ViewChild("logList", { static: true }) logList: IonList;
 
   @ViewChild("infiniteScroll", {}) infiniteScroll: IonInfiniteScroll;
 
   @ViewChild("content", { static: true }) content: IonContent;
 
   @ViewChild("refresher", { static: true }) refresher: IonRefresher;
+
+  @ViewChildren(LogItemComponent) listItems!: QueryList<LogItemComponent>;
 
   scrollElement: HTMLElement;
 
@@ -112,7 +118,7 @@ export class LogPage implements OnInit, AfterViewInit {
   dataList$: Observable<any[]>;
   dataList: LogItemDisplay[];
 
-  batchSize: number = 20;
+  batchSize: number = 50;
   loading: boolean = false;
   noMoreData: boolean = false;
 
@@ -136,7 +142,8 @@ export class LogPage implements OnInit, AfterViewInit {
     public toastCtrl: ToastController,
     public userData: UserData,
     public config: Config,
-    private auth: AngularFireAuth
+    private auth: AngularFireAuth,
+    public renderer: Renderer2
   ) {}
 
   ngOnInit() {
@@ -226,9 +233,11 @@ export class LogPage implements OnInit, AfterViewInit {
               let data: LogItem = change.doc.data() as LogItem;
               let time = data.time.toDate().toISOString();
               let existingItem = this.getItem(id);
+              let existingData = existingItem ? existingItem.data : null;
               console.log(
                 `log: change: ${change.type} ${id} ${time} ${change.oldIndex} ${change.newIndex}:`
               );
+              console.log(data);
 
               switch (change.type) {
                 case "added":
@@ -240,18 +249,67 @@ export class LogPage implements OnInit, AfterViewInit {
                     if (existingItem) {
                       // modify it
                       existingItem.data = data;
+                      existingItem.doc = change.doc;
                     } else {
                       // add it
                       console.log("log: added new item at beginning of list");
                       console.log(data);
-                      this.dataList.unshift(this.docToLogItem(change.doc, true));
+                      this.dataList.unshift(
+                        this.docToLogItem(change.doc, true)
+                      );
                     }
                   }
                   break;
                 case "modified":
                   // find it in list and modify it
                   if (existingItem) {
+                    // symptoms
+                    // let symptomUpdates = [];
+                    // let oldKeys: string[] = Object.keys(existingData.symptoms);
+                    // let newKeys: string[] = Object.keys(data.symptoms);
+
+                    // let oldNotNew = oldKeys.filter((v) => !newKeys.includes(v));
+                    // oldNotNew.forEach((key) => {
+                    //   symptomUpdates.push({ key: key, value: "deleted" });
+                    // });
+
+                    // let newNotOld = newKeys.filter((v) => !oldKeys.includes(v));
+                    // newNotOld.forEach((key) => {
+                    //   symptomUpdates.push({
+                    //     key: key,
+                    //     value: data.symptoms[key],
+                    //   });
+                    // });
+
+                    // let both = newKeys.filter((v) => oldKeys.includes(v));
+                    // both.forEach((key) => {
+                    //   if (existingData.symptoms[key] !== data.symptoms[key]) {
+                    //     symptomUpdates.push({
+                    //       key: key,
+                    //       value: data.symptoms[key],
+                    //     });
+                    //   }
+                    // });
+
+                    // console.log("log: symptom updates:");
+                    // console.log(symptomUpdates);
+
                     // make sure that the data actually changed???
+
+                    // did it change order?
+                    if (
+                      change.oldIndex >= 0 &&
+                      change.newIndex >= 0 &&
+                      change.oldIndex != change.newIndex
+                    ) {
+                      console.log(
+                        "log: item moved from " +
+                          change.oldIndex +
+                          " to " +
+                          change.newIndex
+                      );
+                    }
+
                     existingItem.data = { ...data };
                     existingItem.state = "edited";
                   }
@@ -499,14 +557,18 @@ export class LogPage implements OnInit, AfterViewInit {
     }
   }
 
-  edit(item: LogItemDisplay) {
+  onClickEdit(event: { id: string; logItem: LogItem }) {
     console.log("log: edit");
+    console.log(event.id);
+    console.log(event.logItem);
+    let itemDisplay = this.getItem(event.id);
     this.modalCtrl
       .create({
         component: LogItemModal,
         // cssClass: 'addlog-modal auto-height',
         componentProps: {
-          doc: item.doc,
+          id: event.id,
+          logItem: event.logItem,
         },
       })
       .then((modal) => {
@@ -711,7 +773,39 @@ export class LogPage implements OnInit, AfterViewInit {
     );
   }
 
-  onAnimationEnd(event) {
+  shiftListY(
+    px: number,
+    seconds: number,
+    startIndex: number = 0,
+    onComplete?: () => void
+  ) {
+    let cList = this.listItems.toArray();
+    let subList = cList.filter((v, i) => i >= startIndex);
+
+    subList.forEach((c) => {
+      c.markForCheck();
+      let elem = document.getElementById(c.logItemId);
+      // this.renderer.setStyle(elem, "transform", "none");
+      gsap.set(elem, { y: 0 });
+      gsap.to(elem, { y: px, duration: seconds });
+    });
+    gsap.delayedCall(seconds, () => {
+      // reset tween
+      subList.forEach((c) => {
+        let elem = document.getElementById(c.logItemId);
+        gsap.set(elem, { y: 0 });
+        // this.renderer.removeStyle(elem, "transform");
+      });
+
+      cList.forEach((c) => c.markForCheck());
+
+      if (onComplete) {
+        onComplete();
+      }
+    });
+  }
+
+  onAnimationEnd(event: AnimationEvent) {
     // console.log("animation event");
     // console.log(event);
     // console.log(event.element.id);
@@ -719,14 +813,44 @@ export class LogPage implements OnInit, AfterViewInit {
     console.log(
       "logitem: animationend: " + event.toState + ": " + event.element.id
     );
+    // console.log(event);
+
+    let el = event.element;
+    let id = el ? el.id : null;
+    let cList = this.listItems.toArray();
+    let cIndex: number = cList.findIndex((c) => c.logItemId === id);
+    let dataIndex: number = this.getItemIndex(id);
 
     switch (event.toState) {
       case "deleted":
-        // remove from model and view
-        const index = this.getItemIndex(event.element.id);
-        if (index >= 0) {
-          this.dataList.splice(index, 1);
-          this.prepList(this.dataList);
+        if (dataIndex >= 0 && cIndex < cList.length - 1) {
+          // make everything below the deleted element move up to take its place
+          let heightOfDeleted = document.getElementById(id).clientHeight;
+          this.shiftListY(-1 * heightOfDeleted, 1, cIndex + 1, () => {
+            // remove from model and view
+            this.dataList.splice(dataIndex, 1);
+            this.prepList(this.dataList);
+          });
+
+          // let afterList = cList.filter((v, i) => i > cIndex);
+          // console.log("log: tweening " + afterList.length + " items");
+          // afterList.forEach((c) => {
+          //   c.markForCheck();
+          //   let elem = document.getElementById(c.logItemId);
+          //   this.renderer.setStyle(elem, "transform", "none");
+          //   gsap.to(elem, { y: heightOfDeleted * -1, duration: 1 });
+          // });
+          // gsap.delayedCall(1, () => {
+          //   // reset tween
+          //   afterList.forEach((c) => {
+          //     let elem = document.getElementById(c.logItemId);
+          //     this.renderer.removeStyle(elem, "transform");
+          //   });
+
+          //   // remove from model and view
+          //   this.dataList.splice(dataIndex, 1);
+          //   this.prepList(this.dataList);
+          // });
         }
         break;
       case "edited":

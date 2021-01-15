@@ -75,7 +75,7 @@
         </ion-item-divider>
       </ng-container>
 
-      <app-logitem [item]="item.data" [id]="item.doc.id" (click)="edit(item)" [state]="item.state" [@itemState]="item.state" (@itemState.done)="onAnimationEnd($event)"></app-logitem>
+      <app-logitem [logItem]="item.data" [logItemId]="item.doc.id" [id]="item.doc.id" (edit)="onClickEdit($event)" [state]="item.state" [@itemState]="item.state" (@itemState.done)="onAnimationEnd($event)"></app-logitem>
 
       <!-- <div [id]="item.doc.id" [@itemState]="item.state" (@itemState.done)="onAnimationEnd($event)">
         <ion-item-divider>

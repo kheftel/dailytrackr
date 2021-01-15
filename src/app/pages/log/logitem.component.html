@@ -1,34 +1,34 @@
 <ion-item-divider>
   <ion-label>
-    <h3>{{formatTime(item.time)}}</h3>
+    <h3>{{formatTime(logItem.time)}}</h3>
   </ion-label>
 </ion-item-divider>
 
 <ion-item button (click)="onClick()" lines="none">
   <ion-label>
-    <ng-container *ngIf="hasKeys(item.symptoms)">
+    <ng-container *ngIf="hasKeys(logItem.symptoms)">
       <h3>Symptoms:</h3>
-      <p class="symptom ion-color-{{symptom.severity}}" *ngFor="let symptom of prepSymptoms(item.symptoms)">
+      <p class="symptom ion-color-{{symptom.severity}}" *ngFor="let symptom of prepSymptoms(logItem.symptoms)">
         {{symptom.name}}:<ion-badge color="{{symptom.severity}}">{{symptom.value}}</ion-badge>
       </p>
     </ng-container>
 
-    <ng-container *ngIf="hasKeys(item.goodThings)">
+    <ng-container *ngIf="hasKeys(logItem.goodThings)">
       <h3 style="margin-top:10px">Good Things:</h3>
-      <p class="good-thing ion-color-{{goodThing.severity}}" *ngFor="let goodThing of prepGoodThings(item.goodThings)">
+      <p class="good-thing ion-color-{{goodThing.severity}}" *ngFor="let goodThing of prepGoodThings(logItem.goodThings)">
         {{goodThing.name}}:<ion-badge color="{goodThing.severity}}">{{goodThing.value}}</ion-badge>
       </p>
     </ng-container>
 
-    <h3 style="margin-top:10px" *ngIf="item.mitigations.length">Mitigations:</h3>
-    <p *ngFor="let m of item.mitigations" class="symptom ion-color-medium">
+    <h3 style="margin-top:10px" *ngIf="logItem.mitigations.length">Mitigations:</h3>
+    <p *ngFor="let m of logItem.mitigations" class="symptom ion-color-medium">
       {{m}}
     </p>
 
-    <ng-container *ngIf="item.notes">
+    <ng-container *ngIf="logItem.notes">
       <h3 style="margin-top:10px">Notes:</h3>
       <p class="notes ion-color-medium">
-        {{item.notes}}
+        {{logItem.notes}}
       </p>
     </ng-container>
   </ion-label>

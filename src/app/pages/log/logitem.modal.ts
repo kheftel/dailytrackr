@@ -30,7 +30,8 @@ import {
 export interface LogItemModalResult {
   saved: boolean;
   action: string;
-  doc?: firebase.firestore.QueryDocumentSnapshot;
+  id?: string;
+  data?: LogItem;
   deletedId?: string;
   msg: string;
 }
@@ -43,7 +44,8 @@ export interface LogItemModalResult {
 export class LogItemModal implements OnInit {
   formGroup: FormGroup;
 
-  @Input() doc: firebase.firestore.QueryDocumentSnapshot;
+  @Input() logItem: LogItem;
+  @Input() id: string;
 
   // validationMessages = {
   //   startTime: [
@@ -72,41 +74,39 @@ export class LogItemModal implements OnInit {
     const dNow = new Date();
     const tNow = firebase.firestore.Timestamp.fromDate(dNow);
 
-    if (this.doc) {
-      console.log("modal edit mode: " + this.doc.id);
-      console.log(this.doc.data());
-
-      const data = this.doc.data() as LogItem;
+    if (this.logItem) {
+      console.log("modal edit mode: " + this.id);
+      console.log(this.logItem);
 
       // construct the object to build the formgroup with from the passed-in data
       const formInitData: any = {
-        time: [data.time.toDate().toISOString()],
-        notes: [data.notes || ""],
+        time: [this.logItem.time.toDate().toISOString()],
+        notes: [this.logItem.notes || ""],
       };
 
       const mitigations = [];
-      for (const mitigation of data.mitigations) {
+      for (const mitigation of this.logItem.mitigations) {
         mitigations.push(this.formBuilder.control(mitigation));
       }
       formInitData.mitigations = this.formBuilder.array(mitigations);
 
       const symptoms = [];
-      for (const key in data.symptoms) {
+      for (const key in this.logItem.symptoms) {
         symptoms.push(
           this.formBuilder.group({
             name: [key],
-            value: [data.symptoms[key]],
+            value: [this.logItem.symptoms[key]],
           })
         );
       }
       formInitData.symptoms = this.formBuilder.array(symptoms);
 
       const goodThings = [];
-      for (const key in data.goodThings) {
+      for (const key in this.logItem.goodThings) {
         goodThings.push(
           this.formBuilder.group({
             name: [key],
-            value: [data.goodThings[key]],
+            value: [this.logItem.goodThings[key]],
           })
         );
       }
@@ -254,7 +254,7 @@ export class LogItemModal implements OnInit {
     }
     const formarray: FormArray = this[which];
 
-    formarray.removeAt(i)
+    formarray.removeAt(i);
 
     // return this.alertCtrl
     //   .create({
@@ -282,7 +282,7 @@ export class LogItemModal implements OnInit {
   }
 
   onSaveClick() {
-    console.log(this.formGroup.value);
+    // console.log(this.formGroup.value);
 
     const data: LogItem = {
       time: firebase.firestore.Timestamp.fromDate(
@@ -305,13 +305,14 @@ export class LogItemModal implements OnInit {
       if (mitigation) data.mitigations.push(mitigation);
     }
 
-    if (this.doc) {
-      data.uid = this.doc.data().uid;
-      this.logData.updateLogItem(this.doc.id, data).then((doc) => {
+    if (this.logItem) {
+      data.uid = this.logItem.uid;
+      this.logData.updateLogItem(this.id, data).then((doc) => {
         const result: LogItemModalResult = {
           saved: true,
           action: "update",
-          doc: doc,
+          data: data,
+          id: this.id,
           msg:
             "Successfully updated entry " +
             format(data.time.toDate(), "yyyy-MM-dd h:mm a"),
@@ -323,7 +324,8 @@ export class LogItemModal implements OnInit {
         const result: LogItemModalResult = {
           saved: true,
           action: "add",
-          doc: doc,
+          data: data,
+          id: doc.id,
           msg:
             "Successfully added new entry " +
             format(data.time.toDate(), "yyyy-MM-dd h:mm a"),
@@ -334,7 +336,7 @@ export class LogItemModal implements OnInit {
   }
 
   onDeleteClick() {
-    if (this.doc) {
+    if (this.logItem) {
       return this.alertCtrl
         .create({
           message: `Really delete this log item?`,
@@ -354,8 +356,8 @@ export class LogItemModal implements OnInit {
   }
 
   deleteSelf() {
-    const id: string = this.doc.id;
-    this.doc.ref.delete().then(() => {
+    const id: string = this.id;
+    this.logData.deleteLogItem(id).then(() => {
       const result: LogItemModalResult = {
         saved: true,
         action: "delete",
