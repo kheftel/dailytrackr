@@ -569,7 +569,7 @@ export class LogPage implements OnInit, AfterViewInit {
   }
 
   sortByTime(a: LogItemDisplay, b: LogItemDisplay) {
-    a.data.time.valueOf() > b.data.time.valueOf() ? -1 : 1;
+    return a.data.time.valueOf() > b.data.time.valueOf() ? -1 : 1;
   }
 
   prepList(list: LogItemDisplay[]) {
