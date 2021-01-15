@@ -300,7 +300,7 @@ export class LogPage implements OnInit, AfterViewInit {
                     if (
                       change.oldIndex >= 0 &&
                       change.newIndex >= 0 &&
-                      change.oldIndex != change.newIndex
+                      change.oldIndex !== change.newIndex
                     ) {
                       console.log(
                         "log: item moved from " +
