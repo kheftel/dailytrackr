@@ -386,222 +386,188 @@ export class LogPage implements OnInit, AfterViewInit {
       });
   }
 
+  scheduleNextQueueProcessing() {
+    setTimeout(() => {
+      this.processChangeQueue();
+    }, 0);
+  }
+
   processChangeQueue() {
     console.log("log: processChangeQueue");
-    const needPrepList: boolean = false;
 
-    this.changeQueue.forEach((change) => {
-      const id = change.doc.id;
-      const data: LogItem = change.doc.data() as LogItem;
-      const time = data.time.toDate().toISOString();
-      const item = this.getItem(id);
-      const oldIndex: number = change.oldIndex;
-      const newIndex: number = change.newIndex;
-      console.log(
-        `log: change: ${change.type} ${id} ${time} ${oldIndex} ${newIndex}:`
-      );
-      console.log(data);
+    if (this.changeQueue.length === 0) {
+      console.log("log: change queue is empty");
+      return;
+    }
 
-      switch (change.type) {
-        case "added":
-          // does it already exist in the list? (this shouldn't happen)
-          if (item) {
-            // modify it
-            item.data = data;
-            item.doc = change.doc;
-          } else {
-            // add it
-            this.dataList.splice(
-              change.newIndex,
-              0,
-              this.docToLogItem(change.doc, true)
-            );
-            // wait a frame for the item to be created, then animate it
-            setTimeout(() => {
-              this.doAnimAdd(id);
-            }, 0);
+    // process one queue item
+    let change = this.changeQueue.shift();
+
+    const id = change.doc.id;
+    const data: LogItem = change.doc.data() as LogItem;
+    const time = data.time.toDate().toISOString();
+    const item = this.getItem(id);
+    const oldIndex: number = change.oldIndex;
+    const newIndex: number = change.newIndex;
+    console.log(
+      `log: change: ${change.type} ${id} ${time} ${oldIndex} ${newIndex}:`
+    );
+    console.log(data);
+
+    switch (change.type) {
+      case "added":
+        // does it already exist in the list? (this shouldn't happen)
+        // add it
+        this.dataList.splice(
+          change.newIndex,
+          0,
+          this.docToLogItem(change.doc, true)
+        );
+        // wait a frame for the item to be created, then animate it
+        setTimeout(() => {
+          this.doAnimAdd(id);
+          this.scheduleNextQueueProcessing();
+        }, 0);
+        break;
+      case "modified":
+        // find it in list and modify it
+        if (!item) throw new Error("could not find item " + id);
+        // symptoms
+        // let symptomUpdates = [];
+        // let oldKeys: string[] = Object.keys(existingData.symptoms);
+        // let newKeys: string[] = Object.keys(data.symptoms);
+
+        // let oldNotNew = oldKeys.filter((v) => !newKeys.includes(v));
+        // oldNotNew.forEach((key) => {
+        //   symptomUpdates.push({ key: key, value: "deleted" });
+        // });
+
+        // let newNotOld = newKeys.filter((v) => !oldKeys.includes(v));
+        // newNotOld.forEach((key) => {
+        //   symptomUpdates.push({
+        //     key: key,
+        //     value: data.symptoms[key],
+        //   });
+        // });
+
+        // let both = newKeys.filter((v) => oldKeys.includes(v));
+        // both.forEach((key) => {
+        //   if (existingData.symptoms[key] !== data.symptoms[key]) {
+        //     symptomUpdates.push({
+        //       key: key,
+        //       value: data.symptoms[key],
+        //     });
+        //   }
+        // });
+
+        // console.log("log: symptom updates:");
+        // console.log(symptomUpdates);
+
+        // make sure that the data actually changed???
+
+        // change the data to cause a re-calculation of height
+        // this.dataList[oldIndex] = { ...item };
+        item.data = { ...data };
+        const c = this.getItemComponentById(id);
+        c.markForCheck();
+
+        // did it change order?
+        if (oldIndex === newIndex) {
+          this.doAnimEdit(item.doc.id);
+          this.scheduleNextQueueProcessing();
+          return;
+        }
+
+        // wait a frame for heights to be recalculated
+        setTimeout(() => {
+          if (oldIndex < 0 || newIndex < 0) {
+            throw new Error("invalid indices");
           }
-          break;
-        case "modified":
-          // find it in list and modify it
-          if (item) {
-            // symptoms
-            // let symptomUpdates = [];
-            // let oldKeys: string[] = Object.keys(existingData.symptoms);
-            // let newKeys: string[] = Object.keys(data.symptoms);
-
-            // let oldNotNew = oldKeys.filter((v) => !newKeys.includes(v));
-            // oldNotNew.forEach((key) => {
-            //   symptomUpdates.push({ key: key, value: "deleted" });
-            // });
-
-            // let newNotOld = newKeys.filter((v) => !oldKeys.includes(v));
-            // newNotOld.forEach((key) => {
-            //   symptomUpdates.push({
-            //     key: key,
-            //     value: data.symptoms[key],
-            //   });
-            // });
-
-            // let both = newKeys.filter((v) => oldKeys.includes(v));
-            // both.forEach((key) => {
-            //   if (existingData.symptoms[key] !== data.symptoms[key]) {
-            //     symptomUpdates.push({
-            //       key: key,
-            //       value: data.symptoms[key],
-            //     });
-            //   }
-            // });
-
-            // console.log("log: symptom updates:");
-            // console.log(symptomUpdates);
-
-            // make sure that the data actually changed???
-
-            // change the data to cause a re-calculation of height
-            // this.dataList[oldIndex] = { ...item };
-            item.data = { ...data };
-            const c = this.getItemComponentById(id);
-            c.markForCheck();
-
-            // did it change order?
-            if (oldIndex === newIndex) {
-              this.doAnimEdit(item.doc.id);
-            } else {
-              // wait a frame for heights to be recalculated
-              setTimeout(() => {
-                if (oldIndex >= 0 && newIndex >= 0) {
-                  console.log(
-                    `log: item moved from ${oldIndex} to ${newIndex}`
-                  );
-                  const duration = 500;
-                  const delta: number = newIndex - oldIndex;
-                  const sign = delta > 0 ? 1 : -1;
-                  if (Math.abs(delta) === 1) {
-                    const hOld = this.getItemHeightByIndex(oldIndex);
-                    const hNew = this.getItemHeightByIndex(newIndex);
-                    const elemOld = this.getItemElementByIndex(oldIndex);
-                    const elemNew = this.getItemElementByIndex(newIndex);
-                    this.shiftElementY(elemOld, sign * hNew, duration);
-                    this.shiftElementY(
-                      elemNew,
-                      -1 * sign * hOld,
-                      duration
-                    ).then(() => {
-                      console.log("log: tween end");
-                      // re lay out the list
-                      this.prepList(this.dataList);
-                    });
-                  } else if (delta > 1) {
-                    // move all but 1 items up by the height of
-                    // the item at oldIndex
-                    const heightToMoveUp = this.getItemHeightByIndex(oldIndex);
-                    let heightToMoveDown = 0;
-                    for (let i = oldIndex + 1; i <= newIndex; i++) {
-                      const e = this.getItemElementByIndex(i);
-                      this.shiftElementY(e, -1 * heightToMoveUp, duration);
-                      heightToMoveDown += this.getItemHeightByIndex(i);
-                    }
-                    // move 1 item down by the height of the other elements
-                    this.shiftElementY(
-                      this.getItemElementByIndex(oldIndex),
-                      heightToMoveDown,
-                      duration
-                    ).then(() => this.prepList(this.dataList));
-                  } else if (delta < -1) {
-                    // move all but 1 items down by the height of
-                    // the item at oldIndex
-                    const heightToMoveDown = this.getItemHeightByIndex(
-                      oldIndex
-                    );
-                    let heightToMoveUp = 0;
-                    for (let i = oldIndex - 1; i >= newIndex; i--) {
-                      const e = this.getItemElementByIndex(i);
-                      this.shiftElementY(e, heightToMoveDown, duration);
-                      heightToMoveUp += this.getItemHeightByIndex(i);
-                    }
-                    // move 1 item up by the height of the other elements
-                    this.shiftElementY(
-                      this.getItemElementByIndex(oldIndex),
-                      -1 * heightToMoveUp,
-                      duration
-                    ).then(() => this.prepList(this.dataList));
-                  }
-                  // if (newIndex === oldIndex + 1) {
-                  //   // moved down one
-                  //   const hOld = this.getItemHeightByIndex(oldIndex);
-                  //   const hNew = this.getItemHeightByIndex(newIndex);
-                  //   const elemOld = this.getItemElementByIndex(oldIndex);
-                  //   const elemNew = this.getItemElementByIndex(newIndex);
-                  //   this.shiftElementY(elemOld, hNew, duration);
-                  //   this.shiftElementY(elemNew, -1 * hOld, duration).then(
-                  //     () => {
-                  //       console.log("log: tween end");
-                  //       // re lay out the list
-                  //       this.prepList(this.dataList);
-                  //     }
-                  //   );
-                  // } else if (newIndex === oldIndex - 1) {
-                  //   // moved up one
-                  //   const hOld = this.getItemHeightByIndex(oldIndex);
-                  //   const hNew = this.getItemHeightByIndex(newIndex);
-                  //   const elemOld = this.getItemElementByIndex(oldIndex);
-                  //   const elemNew = this.getItemElementByIndex(newIndex);
-                  //   this.shiftElementY(elemOld, -1 * hNew, duration);
-                  //   this.shiftElementY(elemNew, hOld, duration).then(() => {
-                  //     console.log("log: tween end");
-                  //     // re lay out the list
-                  //     this.prepList(this.dataList);
-                  //   });
-                  // }
-                  else {
-                    console.log("log: OTHER EDIT");
-                    this.prepList(this.dataList);
-                  }
-                } else {
-                  // shouldn't happen
-                  this.prepList(this.dataList);
-                }
-              }, 0);
+          console.log(`log: item moved from ${oldIndex} to ${newIndex}`);
+          const duration = 500;
+          const delta: number = newIndex - oldIndex;
+          const sign = delta > 0 ? 1 : -1;
+          // moved by 1
+          if (Math.abs(delta) === 1) {
+            const hOld = this.getItemHeightByIndex(oldIndex);
+            const hNew = this.getItemHeightByIndex(newIndex);
+            const elemOld = this.getItemElementByIndex(oldIndex);
+            const elemNew = this.getItemElementByIndex(newIndex);
+            this.shiftElementY(elemOld, sign * hNew, duration);
+            this.shiftElementY(elemNew, -1 * sign * hOld, duration).then(() => {
+              console.log("log: tween end");
+              // re lay out the list
+              this.prepList(this.dataList);
+              this.scheduleNextQueueProcessing();
+            });
+          } else if (delta > 1) {
+            // moved more than 1 position down
+            // move all but 1 items up by the height of
+            // the item at oldIndex
+            const heightToMoveUp = this.getItemHeightByIndex(oldIndex);
+            let heightToMoveDown = 0;
+            for (let i = oldIndex + 1; i <= newIndex; i++) {
+              const e = this.getItemElementByIndex(i);
+              this.shiftElementY(e, -1 * heightToMoveUp, duration);
+              heightToMoveDown += this.getItemHeightByIndex(i);
             }
-          }
-          break;
-        case "removed":
-          // it's been deleted! remove from list
-          if (item) {
-            this.doAnimDelete(id).then(() => {
-              // if not at end of list, move all remaining items up one slot
-              if (oldIndex < this.dataList.length - 1) {
-                const heightToMoveUp = this.getItemHeightByIndex(oldIndex);
-                for (let i = oldIndex + 1; i < this.dataList.length; i++) {
-                  const elem = this.getItemElementByIndex(i);
-                  const p = this.shiftElementY(elem, -1 * heightToMoveUp, 500);
-                  if (i === this.dataList.length - 1) {
-                    p.then(() => {
-                      // delete from list and re-layout
-                      this.dataList.splice(oldIndex, 1);
-                      this.prepList(this.dataList);
-                    });
-                  }
-                }
-              } else {
-                this.dataList.splice(oldIndex, 1);
-                this.prepList(this.dataList);
-              }
+            // move 1 item down by the height of the other elements
+            this.shiftElementY(
+              this.getItemElementByIndex(oldIndex),
+              heightToMoveDown,
+              duration
+            ).then(() => {
+              this.prepList(this.dataList);
+              this.scheduleNextQueueProcessing();
+            });
+          } else if (delta < -1) {
+            // moved by more than one position up
+            // move all but 1 items down by the height of
+            // the item at oldIndex
+            const heightToMoveDown = this.getItemHeightByIndex(oldIndex);
+            let heightToMoveUp = 0;
+            for (let i = oldIndex - 1; i >= newIndex; i--) {
+              const e = this.getItemElementByIndex(i);
+              this.shiftElementY(e, heightToMoveDown, duration);
+              heightToMoveUp += this.getItemHeightByIndex(i);
+            }
+            // move 1 item up by the height of the other elements
+            this.shiftElementY(
+              this.getItemElementByIndex(oldIndex),
+              -1 * heightToMoveUp,
+              duration
+            ).then(() => {
+              this.prepList(this.dataList);
+              this.scheduleNextQueueProcessing();
             });
           }
-          break;
-      }
-    });
-
-    // zero out the queue
-    this.changeQueue.length = 0;
-
-    if (needPrepList) {
-      this.prepList(this.dataList);
-      // for (const item of this.listItems) {
-      //   item.markForCheck();
-      // }
+        }, 0);
+        break;
+      case "removed":
+        // it's been deleted! remove from list
+        this.doAnimDelete(id).then(() => {
+          // if not at end of list, move all remaining items up one slot
+          if (oldIndex < this.dataList.length - 1) {
+            const heightToMoveUp = this.getItemHeightByIndex(oldIndex);
+            for (let i = oldIndex + 1; i < this.dataList.length; i++) {
+              const elem = this.getItemElementByIndex(i);
+              const p = this.shiftElementY(elem, -1 * heightToMoveUp, 500);
+              if (i === this.dataList.length - 1) {
+                p.then(() => {
+                  // delete from list and re-layout
+                  this.dataList.splice(oldIndex, 1);
+                  this.prepList(this.dataList);
+                  this.scheduleNextQueueProcessing();
+                });
+              }
+            }
+          } else {
+            this.dataList.splice(oldIndex, 1);
+            this.prepList(this.dataList);
+            this.scheduleNextQueueProcessing();
+          }
+        });
+        break;
     }
   }
 
