@@ -394,7 +394,7 @@ export class LogPage implements OnInit, AfterViewInit {
       const id = change.doc.id;
       const data: LogItem = change.doc.data() as LogItem;
       const time = data.time.toDate().toISOString();
-      const existingItem = this.getItem(id);
+      const item = this.getItem(id);
       const oldIndex: number = change.oldIndex;
       const newIndex: number = change.newIndex;
       console.log(
@@ -405,10 +405,10 @@ export class LogPage implements OnInit, AfterViewInit {
       switch (change.type) {
         case "added":
           // does it already exist in the list? (this shouldn't happen)
-          if (existingItem) {
+          if (item) {
             // modify it
-            existingItem.data = data;
-            existingItem.doc = change.doc;
+            item.data = data;
+            item.doc = change.doc;
           } else {
             // add it
             this.dataList.splice(
@@ -416,7 +416,6 @@ export class LogPage implements OnInit, AfterViewInit {
               0,
               this.docToLogItem(change.doc, true)
             );
-            // this.dataList.unshift();
             // wait a frame for the item to be created, then animate it
             setTimeout(() => {
               this.doAnimAdd(id);
@@ -425,7 +424,7 @@ export class LogPage implements OnInit, AfterViewInit {
           break;
         case "modified":
           // find it in list and modify it
-          if (existingItem) {
+          if (item) {
             // symptoms
             // let symptomUpdates = [];
             // let oldKeys: string[] = Object.keys(existingData.symptoms);
@@ -460,13 +459,14 @@ export class LogPage implements OnInit, AfterViewInit {
             // make sure that the data actually changed???
 
             // change the data to cause a re-calculation of height
-            existingItem.data = { ...data };
+            // this.dataList[oldIndex] = { ...item };
+            item.data = { ...data };
             const c = this.getItemComponentById(id);
             c.markForCheck();
 
             // did it change order?
             if (oldIndex === newIndex) {
-              this.doAnimEdit(existingItem.doc.id);
+              this.doAnimEdit(item.doc.id);
             } else {
               // wait a frame for heights to be recalculated
               setTimeout(() => {
@@ -568,7 +568,7 @@ export class LogPage implements OnInit, AfterViewInit {
           break;
         case "removed":
           // it's been deleted! remove from list
-          if (existingItem) {
+          if (item) {
             this.doAnimDelete(id).then(() => {
               // if not at end of list, move all remaining items up one slot
               if (oldIndex < this.dataList.length - 1) {
@@ -592,34 +592,6 @@ export class LogPage implements OnInit, AfterViewInit {
           }
           break;
       }
-
-      // switch (data.action) {
-      //   case "add":
-      //     item = this.docToLogItem(data.doc);
-      //     item.state = "new";
-      //     this.dataList.unshift(item);
-
-      //     // sort the list, add headers
-      //     this.prepList(this.dataList);
-      //     break;
-      //   case "update":
-      //     console.log("log: updated item: " + data.doc.id);
-      //     console.log(data.doc.data());
-
-      //     item = this.getItem(data.doc.id);
-      //     item.doc = data.doc;
-      //     item.data = item.doc.data() as LogItem;
-      //     item.state = "edited";
-      //     break;
-      //   case "delete":
-      //     console.log("log: deleted:");
-      //     console.log(data.deletedId);
-
-      //     // remove from the list after animation
-      //     item = this.getItem(data.deletedId);
-      //     item.state = "deleted";
-      //     break;
-      // }
     });
 
     // zero out the queue
