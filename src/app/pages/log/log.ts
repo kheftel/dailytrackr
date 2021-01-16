@@ -7,6 +7,7 @@ import {
   ViewChildren,
   QueryList,
   Renderer2,
+  NgZone,
 } from "@angular/core";
 import { Router } from "@angular/router";
 import {
@@ -20,6 +21,8 @@ import {
   IonInfiniteScroll,
   IonContent,
   IonRefresher,
+  Animation,
+  AnimationController,
 } from "@ionic/angular";
 
 import { ScheduleFilterPage } from "../schedule-filter/schedule-filter";
@@ -55,43 +58,43 @@ import { fi } from "date-fns/locale";
   selector: "page-log",
   templateUrl: "log.html",
   styleUrls: ["./log.scss"],
-  animations: [
-    trigger("itemState", [
-      state(
-        "deleted",
-        style({
-          transform: "scale(0)",
-          // opacity: 0,
-        })
-      ),
-      state(
-        "new",
-        style({
-          transform: "scale(0)",
-          // opacity: 0,
-        })
-      ),
-      state(
-        "initial",
-        style({
-          transform: "none",
-          filter: "none",
-          // opacity: 1,
-        })
-      ),
-      state(
-        "edited",
-        style({
-          transform: "scale(1.05)",
-          filter: "brightness(150%)",
-        })
-      ),
-      transition("new => initial", [animate("500ms 500ms ease-out")]),
-      transition("initial => deleted", [animate("500ms 500ms ease-in")]),
-      transition("initial => edited", [animate("250ms 500ms ease-out")]),
-      transition("edited => initial", [animate("250ms ease-out")]),
-    ]),
-  ],
+  // animations: [
+  //   trigger("itemState", [
+  //     state(
+  //       "deleted",
+  //       style({
+  //         transform: "scale(0)",
+  //         // opacity: 0,
+  //       })
+  //     ),
+  //     state(
+  //       "new",
+  //       style({
+  //         transform: "scale(0)",
+  //         // opacity: 0,
+  //       })
+  //     ),
+  //     state(
+  //       "initial",
+  //       style({
+  //         transform: "none",
+  //         filter: "none",
+  //         // opacity: 1,
+  //       })
+  //     ),
+  //     state(
+  //       "edited",
+  //       style({
+  //         transform: "scale(1.05)",
+  //         filter: "brightness(150%)",
+  //       })
+  //     ),
+  //     transition("new => initial", [animate("500ms 500ms ease-out")]),
+  //     transition("initial => deleted", [animate("500ms 500ms ease-in")]),
+  //     transition("initial => edited", [animate("250ms 500ms ease-out")]),
+  //     transition("edited => initial", [animate("250ms ease-out")]),
+  //   ]),
+  // ],
 })
 export class LogPage implements OnInit, AfterViewInit {
   // Gets a reference to the list element
@@ -131,6 +134,10 @@ export class LogPage implements OnInit, AfterViewInit {
   db: firebase.firestore.Firestore;
   user: firebase.User;
 
+  changeQueue: firebase.firestore.DocumentChange[] = [];
+
+  private _hasModal: boolean = false;
+
   // uid: string;
 
   constructor(
@@ -145,7 +152,10 @@ export class LogPage implements OnInit, AfterViewInit {
     public userData: UserData,
     public config: Config,
     private auth: AngularFireAuth,
-    public renderer: Renderer2
+    public renderer: Renderer2,
+    public animationCtrl: AnimationController,
+    private ngZone: NgZone,
+    private elementRef: ElementRef
   ) {}
 
   ngOnInit() {
@@ -247,188 +257,21 @@ export class LogPage implements OnInit, AfterViewInit {
               return;
             }
 
-            let needPrepList: boolean = false;
             // on subsequent loads, process changes individually
             qs.docChanges().forEach((change) => {
-              let id = change.doc.id;
-              let data: LogItem = change.doc.data() as LogItem;
-              let time = data.time.toDate().toISOString();
-              let existingItem = this.getItem(id);
-              let existingData = existingItem ? existingItem.data : null;
-              console.log(
-                `log: change: ${change.type} ${id} ${time} ${change.oldIndex} ${change.newIndex}:`
-              );
-              console.log(data);
-
-              switch (change.type) {
-                case "added":
-                  // does it already exist in the list? (this shouldn't happen)
-                  if (existingItem) {
-                    // modify it
-                    existingItem.data = data;
-                    existingItem.doc = change.doc;
-                  } else {
-                    // add it
-                    console.log("log: added new item at beginning of list");
-                    console.log(data);
-                    this.dataList.unshift(this.docToLogItem(change.doc, true));
-                  }
-                  needPrepList = true;
-                  break;
-                case "modified":
-                  // find it in list and modify it
-                  if (existingItem) {
-                    // symptoms
-                    // let symptomUpdates = [];
-                    // let oldKeys: string[] = Object.keys(existingData.symptoms);
-                    // let newKeys: string[] = Object.keys(data.symptoms);
-
-                    // let oldNotNew = oldKeys.filter((v) => !newKeys.includes(v));
-                    // oldNotNew.forEach((key) => {
-                    //   symptomUpdates.push({ key: key, value: "deleted" });
-                    // });
-
-                    // let newNotOld = newKeys.filter((v) => !oldKeys.includes(v));
-                    // newNotOld.forEach((key) => {
-                    //   symptomUpdates.push({
-                    //     key: key,
-                    //     value: data.symptoms[key],
-                    //   });
-                    // });
-
-                    // let both = newKeys.filter((v) => oldKeys.includes(v));
-                    // both.forEach((key) => {
-                    //   if (existingData.symptoms[key] !== data.symptoms[key]) {
-                    //     symptomUpdates.push({
-                    //       key: key,
-                    //       value: data.symptoms[key],
-                    //     });
-                    //   }
-                    // });
-
-                    // console.log("log: symptom updates:");
-                    // console.log(symptomUpdates);
-
-                    // make sure that the data actually changed???
-
-                    // change the data to cause a re-calculation of height
-                    existingItem.data = { ...data };
-                    let c = this.getItemComponentById(change.doc.id);
-                    c.markForCheck();
-                    if (change.oldIndex === change.newIndex) {
-                      existingItem.state = "edited";
-                    } else {
-                      // wait a frame for heights to be recalculated
-                      setTimeout(() => {
-                        // did it change order?
-                        let oldIndex: number = change.oldIndex;
-                        let newIndex: number = change.newIndex;
-                        if (
-                          oldIndex >= 0 &&
-                          newIndex >= 0 &&
-                          oldIndex !== newIndex
-                        ) {
-                          console.log(
-                            `log: item moved from ${oldIndex} to ${newIndex}`
-                          );
-                          let duration = 1000;
-                          if (newIndex - 1 === oldIndex) {
-                            // moved down one
-                            let hOld = this.getItemHeightByIndex(oldIndex);
-                            let hNew = this.getItemHeightByIndex(newIndex);
-                            this.shiftItemElementY(oldIndex, hNew, duration);
-                            this.shiftItemElementY(
-                              newIndex,
-                              -1 * hOld,
-                              duration,
-                              () => {
-                                console.log("log: tween end");
-                                // re lay out the list
-                                this.prepList(this.dataList);
-                                setTimeout(() => {
-                                  existingItem.state = "edited";
-                                  // this.getItemComponentById(
-                                  //   existingItem.doc.id
-                                  // ).markForCheck();
-                                }, 0);
-                              }
-                            );
-                          } else if (newIndex + 1 === oldIndex) {
-                            // moved up one
-                            let hOld = this.getItemHeightByIndex(oldIndex);
-                            let hNew = this.getItemHeightByIndex(newIndex);
-                            this.shiftItemElementY(
-                              oldIndex,
-                              -1 * hNew,
-                              duration
-                            );
-                            this.shiftItemElementY(
-                              newIndex,
-                              hOld,
-                              duration,
-                              () => {
-                                console.log("log: tween end");
-                                // re lay out the list
-                                this.prepList(this.dataList);
-                                setTimeout(() => {
-                                  existingItem.state = "edited";
-                                  // this.getItemComponentById(
-                                  //   existingItem.doc.id
-                                  // ).markForCheck();
-                                }, 0);
-                              }
-                            );
-                          } else {
-                            existingItem.state = "edited";
-                          }
-                        } else {
-                          existingItem.state = "edited";
-                        }
-                      }, 0);
-                    }
-                  }
-                  break;
-                case "removed":
-                  // it's been deleted! remove from list
-                  if (existingItem) {
-                    existingItem.state = "deleted";
-                  }
-                  needPrepList = true;
-                  break;
-              }
-
-              // switch (data.action) {
-              //   case "add":
-              //     item = this.docToLogItem(data.doc);
-              //     item.state = "new";
-              //     this.dataList.unshift(item);
-
-              //     // sort the list, add headers
-              //     this.prepList(this.dataList);
-              //     break;
-              //   case "update":
-              //     console.log("log: updated item: " + data.doc.id);
-              //     console.log(data.doc.data());
-
-              //     item = this.getItem(data.doc.id);
-              //     item.doc = data.doc;
-              //     item.data = item.doc.data() as LogItem;
-              //     item.state = "edited";
-              //     break;
-              //   case "delete":
-              //     console.log("log: deleted:");
-              //     console.log(data.deletedId);
-
-              //     // remove from the list after animation
-              //     item = this.getItem(data.deletedId);
-              //     item.state = "deleted";
-              //     break;
-              // }
+              this.changeQueue.push(change);
             });
 
-            if (needPrepList) {
-              this.prepList(this.dataList);
+            // process the queue
+            let processDelay: number = 0;
+            if (this._hasModal) {
+              // change is probably from a modal box, delay before processing
+              // so the modal can animate off
+              processDelay = 1000;
             }
+            setTimeout(() => {
+              this.processChangeQueue();
+            }, processDelay);
 
             if (fromRefresher) {
               this.refresher.complete();
@@ -543,6 +386,189 @@ export class LogPage implements OnInit, AfterViewInit {
       });
   }
 
+  processChangeQueue() {
+    console.log("log: processChangeQueue");
+    let needPrepList: boolean = false;
+
+    this.changeQueue.forEach((change) => {
+      const id = change.doc.id;
+      const data: LogItem = change.doc.data() as LogItem;
+      const time = data.time.toDate().toISOString();
+      const existingItem = this.getItem(id);
+      const existingData = existingItem ? existingItem.data : null;
+      console.log(
+        `log: change: ${change.type} ${id} ${time} ${change.oldIndex} ${change.newIndex}:`
+      );
+      console.log(data);
+
+      switch (change.type) {
+        case "added":
+          // does it already exist in the list? (this shouldn't happen)
+          if (existingItem) {
+            // modify it
+            existingItem.data = data;
+            existingItem.doc = change.doc;
+          } else {
+            // add it
+            this.dataList.splice(
+              change.newIndex,
+              0,
+              this.docToLogItem(change.doc, true)
+            );
+            // this.dataList.unshift();
+            // wait a frame for the item to be created, then animate it
+            setTimeout(() => {
+              this.doAnimAdd(id);
+            }, 0);
+          }
+          // needPrepList = true;
+          break;
+        case "modified":
+          // find it in list and modify it
+          if (existingItem) {
+            // symptoms
+            // let symptomUpdates = [];
+            // let oldKeys: string[] = Object.keys(existingData.symptoms);
+            // let newKeys: string[] = Object.keys(data.symptoms);
+
+            // let oldNotNew = oldKeys.filter((v) => !newKeys.includes(v));
+            // oldNotNew.forEach((key) => {
+            //   symptomUpdates.push({ key: key, value: "deleted" });
+            // });
+
+            // let newNotOld = newKeys.filter((v) => !oldKeys.includes(v));
+            // newNotOld.forEach((key) => {
+            //   symptomUpdates.push({
+            //     key: key,
+            //     value: data.symptoms[key],
+            //   });
+            // });
+
+            // let both = newKeys.filter((v) => oldKeys.includes(v));
+            // both.forEach((key) => {
+            //   if (existingData.symptoms[key] !== data.symptoms[key]) {
+            //     symptomUpdates.push({
+            //       key: key,
+            //       value: data.symptoms[key],
+            //     });
+            //   }
+            // });
+
+            // console.log("log: symptom updates:");
+            // console.log(symptomUpdates);
+
+            // make sure that the data actually changed???
+
+            // change the data to cause a re-calculation of height
+            existingItem.data = { ...data };
+            const c = this.getItemComponentById(change.doc.id);
+            c.markForCheck();
+
+            // did it change order?
+            const oldIndex: number = change.oldIndex;
+            const newIndex: number = change.newIndex;
+
+            if (oldIndex === newIndex) {
+              this.doAnimEdit(existingItem.doc.id);
+            } else {
+              // wait a frame for heights to be recalculated
+              setTimeout(() => {
+                if (oldIndex >= 0 && newIndex >= 0) {
+                  console.log(
+                    `log: item moved from ${oldIndex} to ${newIndex}`
+                  );
+                  const duration = 500;
+                  if (newIndex - 1 === oldIndex) {
+                    // moved down one
+                    const hOld = this.getItemHeightByIndex(oldIndex);
+                    const hNew = this.getItemHeightByIndex(newIndex);
+                    const elemOld = this.getItemElementByIndex(oldIndex);
+                    const elemNew = this.getItemElementByIndex(newIndex);
+                    this.shiftElementY(elemOld, hNew, duration);
+                    this.shiftElementY(elemNew, -1 * hOld, duration).then(
+                      () => {
+                        console.log("log: tween end");
+                        // re lay out the list
+                        this.prepList(this.dataList);
+                      }
+                    );
+                  } else if (newIndex + 1 === oldIndex) {
+                    // moved up one
+                    const hOld = this.getItemHeightByIndex(oldIndex);
+                    const hNew = this.getItemHeightByIndex(newIndex);
+                    const elemOld = this.getItemElementByIndex(oldIndex);
+                    const elemNew = this.getItemElementByIndex(newIndex);
+                    this.shiftElementY(elemOld, -1 * hNew, duration);
+                    this.shiftElementY(elemNew, hOld, duration).then(() => {
+                      console.log("log: tween end");
+                      // re lay out the list
+                      this.prepList(this.dataList);
+                    });
+                  } else {
+                    needPrepList = true;
+                    this.doAnimEdit(existingItem.doc.id);
+                  }
+                } else {
+                  // shouldn't happen
+                  needPrepList = true;
+                }
+              }, 0);
+            }
+          }
+          break;
+        case "removed":
+          // it's been deleted! remove from list
+
+          if (existingItem) {
+            this.doAnimDelete(id).then(() => {
+              const index = this.getItemIndex(id);
+              this.dataList.splice(index, 1);
+              this.prepList(this.dataList);
+            });
+          }
+          break;
+      }
+
+      // switch (data.action) {
+      //   case "add":
+      //     item = this.docToLogItem(data.doc);
+      //     item.state = "new";
+      //     this.dataList.unshift(item);
+
+      //     // sort the list, add headers
+      //     this.prepList(this.dataList);
+      //     break;
+      //   case "update":
+      //     console.log("log: updated item: " + data.doc.id);
+      //     console.log(data.doc.data());
+
+      //     item = this.getItem(data.doc.id);
+      //     item.doc = data.doc;
+      //     item.data = item.doc.data() as LogItem;
+      //     item.state = "edited";
+      //     break;
+      //   case "delete":
+      //     console.log("log: deleted:");
+      //     console.log(data.deletedId);
+
+      //     // remove from the list after animation
+      //     item = this.getItem(data.deletedId);
+      //     item.state = "deleted";
+      //     break;
+      // }
+    });
+
+    // zero out the queue
+    this.changeQueue.length = 0;
+
+    if (needPrepList) {
+      this.prepList(this.dataList);
+      // for (const item of this.listItems) {
+      //   item.markForCheck();
+      // }
+    }
+  }
+
   onRefresh() {
     this.refreshDataList(true);
   }
@@ -573,28 +599,32 @@ export class LogPage implements OnInit, AfterViewInit {
   }
 
   prepList(list: LogItemDisplay[]) {
-    list.sort((a, b) =>
-      a.data.time.valueOf() > b.data.time.valueOf() ? -1 : 1
-    );
+    list.sort(this.sortByTime);
 
-    for (let i = 0; i < list.length; i++) {
-      const item = list[i];
-      if (i > 0) {
-        const lastItem = list[i - 1];
-        const curDate = DateUtil.formatDate(item.data.time);
-        const lastDate = DateUtil.formatDate(lastItem.data.time);
-        item.showDatetime = curDate !== lastDate;
-      } else {
-        item.showDatetime = true;
-      }
-    }
+    // reset the weird bug caused by tweening
+    list.forEach((item) => {
+      const el = this.getItemElementById(item.doc.id);
+      if (el) this.resetElementY(el);
+    });
+
+    // for (let i = 0; i < list.length; i++) {
+    //   const item = list[i];
+    //   if (i > 0) {
+    //     const lastItem = list[i - 1];
+    //     const curDate = DateUtil.formatDate(item.data.time);
+    //     const lastDate = DateUtil.formatDate(lastItem.data.time);
+    //     item.showDatetime = curDate !== lastDate;
+    //   } else {
+    //     item.showDatetime = true;
+    //   }
+    // }
 
     // next tick, animate in any new items
-    setTimeout(() => {
-      for (const item of list) {
-        if (item.state === "new") item.state = "initial";
-      }
-    }, 0);
+    // setTimeout(() => {
+    //   for (const item of list) {
+    //     if (item.state === "new") item.state = "initial";
+    //   }
+    // }, 0);
   }
 
   docToLogItem(
@@ -635,24 +665,26 @@ export class LogPage implements OnInit, AfterViewInit {
   }
 
   getItemElementById(id: string): HTMLElement {
-    return document.getElementById(id);
+    return (this.elementRef.nativeElement as HTMLElement).querySelector(
+      `[id="${id}"]`
+    );
   }
 
   getItemElementByIndex(index: number): HTMLElement {
-    let c = this.getItemComponentByIndex(index);
+    const c = this.getItemComponentByIndex(index);
     return this.getItemElementForComponent(c);
   }
 
   getItemElementHeightById(id: string) {
-    let elem = this.getItemElementById(id);
+    const elem = this.getItemElementById(id);
     if (elem) return elem.clientHeight;
     return 0;
   }
 
   getItemHeightByIndex(index: number) {
-    let c = this.getItemComponentByIndex(index);
+    const c = this.getItemComponentByIndex(index);
     if (!c) return 0;
-    let elem = this.getItemElementById(c.logItemId);
+    const elem = this.getItemElementById(c.logItemId);
     if (!elem) return 0;
     return elem.clientHeight;
   }
@@ -670,7 +702,19 @@ export class LogPage implements OnInit, AfterViewInit {
     console.log("log: edit");
     console.log(event.id);
     console.log(event.logItem);
-    let itemDisplay = this.getItem(event.id);
+
+    // let el = this.getItemElementById(event.id);
+    // this.ngZone.run(() => {
+    //   this.shiftItemElementY(el, 10, 500).then(() => {
+    //     // this.renderer.setStyle(el, "transform", "translateY(0)");
+    //     // this.shiftItemElementY(el, 0, 10);
+    //   });
+    // });
+
+    // return;
+
+    const itemDisplay = this.getItem(event.id);
+    this._hasModal = true;
     this.modalCtrl
       .create({
         component: LogItemModal,
@@ -684,7 +728,8 @@ export class LogPage implements OnInit, AfterViewInit {
         console.log("log: presenting modal");
         modal.present();
         console.log("log: modal presented");
-        modal.onDidDismiss().then((result) => {
+        modal.onWillDismiss().then((result) => {
+          this._hasModal = false;
           this.onModalDismissed(result.data);
         });
       });
@@ -692,6 +737,7 @@ export class LogPage implements OnInit, AfterViewInit {
 
   add() {
     // bring up the add box
+    this._hasModal = true;
     this.modalCtrl
       .create({
         component: LogItemModal,
@@ -699,7 +745,8 @@ export class LogPage implements OnInit, AfterViewInit {
       })
       .then((modal) => {
         modal.present();
-        modal.onDidDismiss().then((result) => {
+        modal.onWillDismiss().then((result) => {
+          this._hasModal = false;
           this.onModalDismissed(result.data);
         });
       });
@@ -852,9 +899,9 @@ export class LogPage implements OnInit, AfterViewInit {
         .onSnapshot((qs) => {
           console.log("log: listener " + listenerId + " ------------------");
           qs.docChanges().forEach((change) => {
-            let id = change.doc.id;
-            let data = change.doc.data();
-            let time = data.time.toDate().toISOString();
+            const id = change.doc.id;
+            const data = change.doc.data();
+            const time = data.time.toDate().toISOString();
             console.log(
               `log: change: ${change.type} ${id} ${time} ${change.oldIndex} ${change.newIndex}:`
             );
@@ -864,36 +911,75 @@ export class LogPage implements OnInit, AfterViewInit {
     );
   }
 
-  shiftItemElementY(
-    index: number,
-    px: number,
-    milliseconds: number,
-    onComplete?: () => void
-  ) {
-    let seconds: number = milliseconds / 1000;
-    let elem = this.getItemElementByIndex(index);
+  doAnimDelete(id: string, duration: number = 500): Promise<void> {
+    const elem = this.getItemElementById(id);
+    return this.animationCtrl
+      .create("onDelete")
+      .addElement(elem)
+      .duration(duration)
+      .fromTo("transform", "scale(1)", "scale(0)")
+      .play();
+  }
+
+  doAnimAdd(id: string, duration: number = 500): Promise<void> {
+    const elem = this.getItemElementById(id);
+    return this.animationCtrl
+      .create("onAdd")
+      .addElement(elem)
+      .duration(duration)
+      .fromTo("transform", "scale(0)", "scale(1)")
+      .play();
+  }
+
+  doAnimEdit(id: string, duration: number = 1000): Promise<void> {
+    const elem = this.getItemElementById(id);
+    return this.animationCtrl
+      .create("onEdit")
+      .addElement(elem)
+      .duration(duration / 2)
+      .fromTo("transform", "scale(1)", "scale(1.05)")
+      .fromTo("filter", "none", "brightness(150%)")
+      .play()
+      .then(() => {
+        return this.animationCtrl
+          .create("onEdit2")
+          .addElement(elem)
+          .duration(duration / 2)
+          .fromTo("transform", "scale(1.05)", "scale(1)")
+          .fromTo("filter", "brightness(150%)", "none")
+          .play();
+      });
+  }
+
+  shiftElementY(itemElement: HTMLElement, px: number, milliseconds: number) {
+    const seconds: number = milliseconds / 1000;
+    const elem = itemElement;
 
     // markForCheck??
 
     // zero out transform
-    gsap.set(elem, { y: 0 });
+    // gsap.set(elem, { y: 0 });
 
     // tween to desired end
-    gsap.to(elem, { y: px, duration: seconds });
+    return (
+      this.animationCtrl
+        .create("shiftItemElementY")
+        .addElement(elem)
+        .duration(milliseconds)
+        // .beforeClearStyles(["transform"])
+        .fromTo("transform", "translateY(0px)", `translateY(${px}px)`)
+        .afterStyles({ transform: "translateY(0px)" })
+        .play()
+    );
+  }
 
-    // do things when tween ends
-    gsap.delayedCall(seconds, () => {
-      // call oncomplete, which should re-order and re-render the list
-      if (onComplete) {
-        onComplete();
-      }
-
-      // reset transform (might need to be next frame??)
-      this.renderer.setStyle(elem, 'transform', 'none');
-      // gsap.set(elem, { y: 0 });
-
-      // markForCheck??
-    });
+  resetElementY(elem: HTMLElement) {
+    return this.animationCtrl
+      .create("resetAnimation")
+      .addElement(elem)
+      .duration(1)
+      .fromTo("transform", "translateY(0)", `translateY(0)`)
+      .play();
   }
 
   shiftListY(
@@ -902,12 +988,12 @@ export class LogPage implements OnInit, AfterViewInit {
     startIndex: number = 0,
     onComplete?: () => void
   ) {
-    let cList = this.listItems.toArray();
-    let subList = cList.filter((v, i) => i >= startIndex);
+    const cList = this.listItems.toArray();
+    const subList = cList.filter((v, i) => i >= startIndex);
 
     subList.forEach((c) => {
       c.markForCheck();
-      let elem = document.getElementById(c.logItemId);
+      const elem = document.getElementById(c.logItemId);
       // this.renderer.setStyle(elem, "transform", "none");
       gsap.set(elem, { y: 0 });
       gsap.to(elem, { y: px, duration: seconds });
@@ -915,7 +1001,7 @@ export class LogPage implements OnInit, AfterViewInit {
     gsap.delayedCall(seconds, () => {
       // reset tween
       subList.forEach((c) => {
-        let elem = document.getElementById(c.logItemId);
+        const elem = document.getElementById(c.logItemId);
         gsap.set(elem, { y: 0 });
         // this.renderer.removeStyle(elem, "transform");
       });
@@ -934,46 +1020,31 @@ export class LogPage implements OnInit, AfterViewInit {
     // console.log(event.element.id);
 
     console.log(
-      "logitem: animationend: " + event.toState + ": " + event.element.id
+      "log: animationend: " +
+        event.fromState +
+        " => " +
+        event.toState +
+        ": " +
+        event.element.id
     );
     // console.log(event);
 
-    let el = event.element;
-    let id = el ? el.id : null;
-    let cList = this.listItems.toArray();
-    let cIndex: number = cList.findIndex((c) => c.logItemId === id);
-    let dataIndex: number = this.getItemIndex(id);
+    const el = event.element;
+    const id = el ? el.id : null;
+    const cList = this.listItems.toArray();
+    const cIndex: number = cList.findIndex((c) => c.logItemId === id);
+    const dataIndex: number = this.getItemIndex(id);
 
     switch (event.toState) {
       case "deleted":
         if (dataIndex >= 0 && cIndex < cList.length - 1) {
           // make everything below the deleted element move up to take its place
-          let heightOfDeleted = document.getElementById(id).clientHeight;
+          const heightOfDeleted = document.getElementById(id).clientHeight;
           this.shiftListY(-1 * heightOfDeleted, 1, cIndex + 1, () => {
             // remove from model and view
             this.dataList.splice(dataIndex, 1);
             this.prepList(this.dataList);
           });
-
-          // let afterList = cList.filter((v, i) => i > cIndex);
-          // console.log("log: tweening " + afterList.length + " items");
-          // afterList.forEach((c) => {
-          //   c.markForCheck();
-          //   let elem = document.getElementById(c.logItemId);
-          //   this.renderer.setStyle(elem, "transform", "none");
-          //   gsap.to(elem, { y: heightOfDeleted * -1, duration: 1 });
-          // });
-          // gsap.delayedCall(1, () => {
-          //   // reset tween
-          //   afterList.forEach((c) => {
-          //     let elem = document.getElementById(c.logItemId);
-          //     this.renderer.removeStyle(elem, "transform");
-          //   });
-
-          //   // remove from model and view
-          //   this.dataList.splice(dataIndex, 1);
-          //   this.prepList(this.dataList);
-          // });
         }
         break;
       case "edited":
