@@ -421,7 +421,6 @@ export class LogPage implements OnInit, AfterViewInit {
               this.doAnimAdd(id);
             }, 0);
           }
-          // needPrepList = true;
           break;
         case "modified":
           // find it in list and modify it
@@ -478,39 +477,92 @@ export class LogPage implements OnInit, AfterViewInit {
                     `log: item moved from ${oldIndex} to ${newIndex}`
                   );
                   const duration = 500;
-                  if (newIndex - 1 === oldIndex) {
-                    // moved down one
+                  let delta: number = newIndex - oldIndex;
+                  let sign = delta > 0 ? 1 : -1;
+                  if (Math.abs(delta) === 1) {
                     const hOld = this.getItemHeightByIndex(oldIndex);
                     const hNew = this.getItemHeightByIndex(newIndex);
                     const elemOld = this.getItemElementByIndex(oldIndex);
                     const elemNew = this.getItemElementByIndex(newIndex);
-                    this.shiftElementY(elemOld, hNew, duration);
-                    this.shiftElementY(elemNew, -1 * hOld, duration).then(
-                      () => {
-                        console.log("log: tween end");
-                        // re lay out the list
-                        this.prepList(this.dataList);
-                      }
-                    );
-                  } else if (newIndex + 1 === oldIndex) {
-                    // moved up one
-                    const hOld = this.getItemHeightByIndex(oldIndex);
-                    const hNew = this.getItemHeightByIndex(newIndex);
-                    const elemOld = this.getItemElementByIndex(oldIndex);
-                    const elemNew = this.getItemElementByIndex(newIndex);
-                    this.shiftElementY(elemOld, -1 * hNew, duration);
-                    this.shiftElementY(elemNew, hOld, duration).then(() => {
+                    this.shiftElementY(elemOld, sign * hNew, duration);
+                    this.shiftElementY(
+                      elemNew,
+                      -1 * sign * hOld,
+                      duration
+                    ).then(() => {
                       console.log("log: tween end");
                       // re lay out the list
                       this.prepList(this.dataList);
                     });
-                  } else {
-                    needPrepList = true;
-                    this.doAnimEdit(existingItem.doc.id);
+                  } else if (delta > 1) {
+                    // move all but 1 items up by the height of
+                    // the item at oldIndex
+                    const heightToMoveUp = this.getItemHeightByIndex(oldIndex);
+                    let heightToMoveDown = 0;
+                    for (let i = oldIndex + 1; i <= newIndex; i++) {
+                      const e = this.getItemElementByIndex(i);
+                      this.shiftElementY(e, -1 * heightToMoveUp, duration);
+                      heightToMoveDown += this.getItemHeightByIndex(i);
+                    }
+                    // move 1 item down by the height of the other elements
+                    this.shiftElementY(
+                      this.getItemElementByIndex(oldIndex),
+                      heightToMoveDown,
+                      duration
+                    ).then(() => this.prepList(this.dataList));
+                  } else if (delta < -1) {
+                    // move all but 1 items down by the height of
+                    // the item at oldIndex
+                    const heightToMoveDown = this.getItemHeightByIndex(
+                      oldIndex
+                    );
+                    let heightToMoveUp = 0;
+                    for (let i = oldIndex - 1; i >= newIndex; i--) {
+                      const e = this.getItemElementByIndex(i);
+                      this.shiftElementY(e, heightToMoveDown, duration);
+                      heightToMoveUp += this.getItemHeightByIndex(i);
+                    }
+                    // move 1 item up by the height of the other elements
+                    this.shiftElementY(
+                      this.getItemElementByIndex(oldIndex),
+                      -1 * heightToMoveUp,
+                      duration
+                    ).then(() => this.prepList(this.dataList));
+                  }
+                  // if (newIndex === oldIndex + 1) {
+                  //   // moved down one
+                  //   const hOld = this.getItemHeightByIndex(oldIndex);
+                  //   const hNew = this.getItemHeightByIndex(newIndex);
+                  //   const elemOld = this.getItemElementByIndex(oldIndex);
+                  //   const elemNew = this.getItemElementByIndex(newIndex);
+                  //   this.shiftElementY(elemOld, hNew, duration);
+                  //   this.shiftElementY(elemNew, -1 * hOld, duration).then(
+                  //     () => {
+                  //       console.log("log: tween end");
+                  //       // re lay out the list
+                  //       this.prepList(this.dataList);
+                  //     }
+                  //   );
+                  // } else if (newIndex === oldIndex - 1) {
+                  //   // moved up one
+                  //   const hOld = this.getItemHeightByIndex(oldIndex);
+                  //   const hNew = this.getItemHeightByIndex(newIndex);
+                  //   const elemOld = this.getItemElementByIndex(oldIndex);
+                  //   const elemNew = this.getItemElementByIndex(newIndex);
+                  //   this.shiftElementY(elemOld, -1 * hNew, duration);
+                  //   this.shiftElementY(elemNew, hOld, duration).then(() => {
+                  //     console.log("log: tween end");
+                  //     // re lay out the list
+                  //     this.prepList(this.dataList);
+                  //   });
+                  // }
+                  else {
+                    console.log("log: OTHER EDIT");
+                    this.prepList(this.dataList);
                   }
                 } else {
                   // shouldn't happen
-                  needPrepList = true;
+                  this.prepList(this.dataList);
                 }
               }, 0);
             }
@@ -518,12 +570,27 @@ export class LogPage implements OnInit, AfterViewInit {
           break;
         case "removed":
           // it's been deleted! remove from list
-
+          const oldIndex = change.oldIndex;
           if (existingItem) {
             this.doAnimDelete(id).then(() => {
-              const index = this.getItemIndex(id);
-              this.dataList.splice(index, 1);
-              this.prepList(this.dataList);
+              // if not at end of list, move all remaining items up one slot
+              if (oldIndex < this.dataList.length - 1) {
+                const heightToMoveUp = this.getItemHeightByIndex(oldIndex);
+                for (let i = oldIndex + 1; i < this.dataList.length; i++) {
+                  const elem = this.getItemElementByIndex(i);
+                  let p = this.shiftElementY(elem, -1 * heightToMoveUp, 500);
+                  if (i === this.dataList.length - 1) {
+                    p.then(() => {
+                      // delete from list and re-layout
+                      this.dataList.splice(oldIndex, 1);
+                      this.prepList(this.dataList);
+                    });
+                  }
+                }
+              } else {
+                this.dataList.splice(oldIndex, 1);
+                this.prepList(this.dataList);
+              }
             });
           }
           break;
@@ -606,6 +673,15 @@ export class LogPage implements OnInit, AfterViewInit {
       const el = this.getItemElementById(item.doc.id);
       if (el) this.resetElementY(el);
     });
+
+    this.listItems.forEach((c) => {
+      c.markForCheck();
+    });
+
+    console.log("log: prepList");
+    console.log(
+      list.map((item) => item.data.time.toDate().toISOString()).join(", ")
+    );
 
     // for (let i = 0; i < list.length; i++) {
     //   const item = list[i];
