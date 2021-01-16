@@ -388,16 +388,17 @@ export class LogPage implements OnInit, AfterViewInit {
 
   processChangeQueue() {
     console.log("log: processChangeQueue");
-    let needPrepList: boolean = false;
+    const needPrepList: boolean = false;
 
     this.changeQueue.forEach((change) => {
       const id = change.doc.id;
       const data: LogItem = change.doc.data() as LogItem;
       const time = data.time.toDate().toISOString();
       const existingItem = this.getItem(id);
-      const existingData = existingItem ? existingItem.data : null;
+      const oldIndex: number = change.oldIndex;
+      const newIndex: number = change.newIndex;
       console.log(
-        `log: change: ${change.type} ${id} ${time} ${change.oldIndex} ${change.newIndex}:`
+        `log: change: ${change.type} ${id} ${time} ${oldIndex} ${newIndex}:`
       );
       console.log(data);
 
@@ -460,13 +461,10 @@ export class LogPage implements OnInit, AfterViewInit {
 
             // change the data to cause a re-calculation of height
             existingItem.data = { ...data };
-            const c = this.getItemComponentById(change.doc.id);
+            const c = this.getItemComponentById(id);
             c.markForCheck();
 
             // did it change order?
-            const oldIndex: number = change.oldIndex;
-            const newIndex: number = change.newIndex;
-
             if (oldIndex === newIndex) {
               this.doAnimEdit(existingItem.doc.id);
             } else {
@@ -477,8 +475,8 @@ export class LogPage implements OnInit, AfterViewInit {
                     `log: item moved from ${oldIndex} to ${newIndex}`
                   );
                   const duration = 500;
-                  let delta: number = newIndex - oldIndex;
-                  let sign = delta > 0 ? 1 : -1;
+                  const delta: number = newIndex - oldIndex;
+                  const sign = delta > 0 ? 1 : -1;
                   if (Math.abs(delta) === 1) {
                     const hOld = this.getItemHeightByIndex(oldIndex);
                     const hNew = this.getItemHeightByIndex(newIndex);
@@ -570,7 +568,6 @@ export class LogPage implements OnInit, AfterViewInit {
           break;
         case "removed":
           // it's been deleted! remove from list
-          const oldIndex = change.oldIndex;
           if (existingItem) {
             this.doAnimDelete(id).then(() => {
               // if not at end of list, move all remaining items up one slot
@@ -578,7 +575,7 @@ export class LogPage implements OnInit, AfterViewInit {
                 const heightToMoveUp = this.getItemHeightByIndex(oldIndex);
                 for (let i = oldIndex + 1; i < this.dataList.length; i++) {
                   const elem = this.getItemElementByIndex(i);
-                  let p = this.shiftElementY(elem, -1 * heightToMoveUp, 500);
+                  const p = this.shiftElementY(elem, -1 * heightToMoveUp, 500);
                   if (i === this.dataList.length - 1) {
                     p.then(() => {
                       // delete from list and re-layout
