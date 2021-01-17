@@ -191,10 +191,10 @@ export class LogItemComponent implements OnInit {
   }
 
   processDataChanges(before: LogItem, after: LogItem) {
-    // if (!before) {
-    //   // initial update, just care about updates
-    //   return;
-    // }
+    if (!before) {
+      // initial data set, just care about updates
+      return;
+    }
 
     const updates: {
       symptom?: NumberMapChange[];
