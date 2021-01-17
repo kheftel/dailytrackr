@@ -19,20 +19,25 @@ export interface LogItemDisplay {
   data: LogItem;
   doc: firebase.firestore.QueryDocumentSnapshot;
   showDatetime: boolean;
-  state: 'new' | 'initial' | 'edited' | 'deleted';
+  state: "new" | "initial" | "edited" | "deleted";
 }
 
 export interface LogItem {
   time: firebase.firestore.Timestamp;
-  symptoms: {
-    [key: string]: number;
-  };
-  goodThings?: {
-    [key: string]: number;
-  };
+  symptoms: NumberMap;
+  goodThings?: NumberMap;
   mitigations: string[];
   notes: string;
   uid?: string;
+}
+
+export interface NumberMap {
+  [key: string]: number;
+}
+
+export interface NumberMapChange {
+  key: string;
+  value: number | "deleted";
 }
 
 @Injectable({

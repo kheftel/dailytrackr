@@ -8,15 +8,15 @@
   <ion-label>
     <ng-container *ngIf="hasKeys(logItem.symptoms)">
       <h3>Symptoms:</h3>
-      <p class="symptom ion-color-{{symptom.severity}}" *ngFor="let symptom of prepSymptoms(logItem.symptoms)">
-        {{symptom.name}}:<ion-badge color="{{symptom.severity}}">{{symptom.value}}</ion-badge>
+      <p id="symptom-{{symptom.name}}" class="symptom ion-color-{{symptom.severity}}" *ngFor="let symptom of prepSymptoms(logItem.symptoms); let i = index">
+        {{symptom.name}}:<ion-badge id="symptom-badge-{{symptom.name}}" color="{{symptom.severity}}">{{symptom.value}}</ion-badge>
       </p>
     </ng-container>
 
     <ng-container *ngIf="hasKeys(logItem.goodThings)">
       <h3 style="margin-top:10px">Good Things:</h3>
-      <p class="good-thing ion-color-{{goodThing.severity}}" *ngFor="let goodThing of prepGoodThings(logItem.goodThings)">
-        {{goodThing.name}}:<ion-badge color="{goodThing.severity}}">{{goodThing.value}}</ion-badge>
+      <p id="goodThing-{{goodThing.name}}" class="good-thing ion-color-{{goodThing.severity}}" *ngFor="let goodThing of prepGoodThings(logItem.goodThings)">
+        {{goodThing.name}}:<ion-badge id="goodThing-badge-{{goodThing.name}}" color="{goodThing.severity}}">{{goodThing.value}}</ion-badge>
       </p>
     </ng-container>
 

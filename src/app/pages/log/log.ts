@@ -39,7 +39,7 @@ import { format, startOfDay } from "date-fns";
 import firebase from "firebase/app";
 import "firebase/firestore";
 import { LogItemModal, LogItemModalResult } from "./logitem.modal";
-import { gsap } from "gsap";
+import gsap from "gsap";
 import {
   animate,
   AnimationEvent,
@@ -401,7 +401,7 @@ export class LogPage implements OnInit, AfterViewInit {
     }
 
     // process one queue item
-    let change = this.changeQueue.shift();
+    const change = this.changeQueue.shift();
 
     const id = change.doc.id;
     const data: LogItem = change.doc.data() as LogItem;
@@ -473,7 +473,7 @@ export class LogPage implements OnInit, AfterViewInit {
 
         // did it change order?
         if (oldIndex === newIndex) {
-          this.doAnimEdit(item.doc.id);
+          // this.doAnimEdit(item.doc.id);
           this.scheduleNextQueueProcessing();
           return;
         }

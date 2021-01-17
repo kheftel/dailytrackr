@@ -1,5 +1,5 @@
 :host {
-  display: block
+  display: block;
 }
 
 .symptom,
@@ -16,6 +16,7 @@ ion-label {
   --padding-start: 8px;
   margin-top: 8px;
   margin-bottom: 8px;
+  overflow: visible !important;
 }
 
 h2,
@@ -24,6 +25,7 @@ h3 {
 }
 
 ion-item {
+  overflow: visible;
   --padding-start: 8px;
 
   h3,
@@ -36,6 +38,8 @@ ion-item {
     position: relative;
     padding-top: 4px;
     padding-bottom: 4px;
+    overflow: visible;
+
     ion-badge {
       vertical-align: middle;
       margin-left: 4px;
