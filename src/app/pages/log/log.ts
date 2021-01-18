@@ -28,11 +28,6 @@ import {
 import { ScheduleFilterPage } from "../schedule-filter/schedule-filter";
 import { ConferenceData } from "../../providers/conference-data";
 import { UserData } from "../../providers/user-data";
-import {
-  HealthlogData,
-  LogItem,
-  LogItemDisplay,
-} from "../../providers/healthlog-data";
 import { Observable, Subscription } from "rxjs";
 import { format, startOfDay } from "date-fns";
 
@@ -54,6 +49,8 @@ import { LogItemComponent } from "./logitem.component";
 import { DateUtil } from "../../util/DateUtil";
 import { fi } from "date-fns/locale";
 import { AnimUtil } from "../../util/AnimUtil";
+import { LogItem, LogItemDisplay } from "../../interfaces/healthlog";
+import { HealthlogData } from "../../providers/healthlog-data";
 
 @Component({
   selector: "page-log",

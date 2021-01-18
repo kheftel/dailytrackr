@@ -20,10 +20,19 @@
       </p>
     </ng-container>
 
-    <h3 style="margin-top:10px" *ngIf="logItem.mitigations.length">Mitigations:</h3>
-    <p id="mitigation-{{m}}" *ngFor="let m of logItem.mitigations" class="symptom ion-color-medium">
-      {{m}}
-    </p>
+    <ng-container *ngIf="logItem.mitigations && logItem.mitigations.length">
+      <h3 style="margin-top:10px">Mitigations:</h3>
+      <p id="mitigation-{{m}}" *ngFor="let m of logItem.mitigations" class="symptom ion-color-medium">
+        {{m}}
+      </p>
+    </ng-container>
+
+    <ng-container *ngIf="logItem.accomplishments && logItem.accomplishments.length">
+      <h3 style="margin-top:10px">Accomplishments:</h3>
+      <p id="accomplishment-{{a}}" *ngFor="let a of logItem.accomplishments" class="symptom ion-color-medium">
+        {{a}}
+      </p>
+    </ng-container>
 
     <ng-container *ngIf="logItem.notes">
       <h3 style="margin-top:10px">Notes:</h3>

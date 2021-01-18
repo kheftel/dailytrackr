@@ -21,10 +21,9 @@ import {
 } from "date-fns";
 import firebase from "firebase/app";
 import "firebase/firestore";
+import { LogItem } from "../../interfaces/healthlog";
 import {
   HealthlogData,
-  LogItem,
-  LogItemDisplay,
 } from "../../providers/healthlog-data";
 
 export interface LogItemModalResult {
@@ -84,12 +83,6 @@ export class LogItemModal implements OnInit {
         notes: [this.logItem.notes || ""],
       };
 
-      const mitigations = [];
-      for (const mitigation of this.logItem.mitigations) {
-        mitigations.push(this.formBuilder.control(mitigation));
-      }
-      formInitData.mitigations = this.formBuilder.array(mitigations);
-
       const symptoms = [];
       for (const key in this.logItem.symptoms) {
         symptoms.push(
@@ -112,9 +105,24 @@ export class LogItemModal implements OnInit {
       }
       formInitData.goodThings = this.formBuilder.array(goodThings);
 
+      const mitigations = [];
+      if(!this.logItem.mitigations) this.logItem.mitigations = [];
+      for (const mitigation of this.logItem.mitigations) {
+        mitigations.push(this.formBuilder.control(mitigation));
+      }
+      formInitData.mitigations = this.formBuilder.array(mitigations);
+
+      const accomplishments = [];
+      if(!this.logItem.accomplishments) this.logItem.accomplishments = [];
+      for (const accomp of this.logItem.accomplishments) {
+        accomplishments.push(this.formBuilder.control(accomp));
+      }
+      formInitData.accomplishments = this.formBuilder.array(accomplishments);
+
       // build the form
       this.formGroup = this.formBuilder.group(formInitData);
     } else {
+      // add mode, create blank form
       this.formGroup = this.formBuilder.group({
         time: [dNow.toISOString()],
         symptoms: this.formBuilder.array([
@@ -130,6 +138,7 @@ export class LogItemModal implements OnInit {
           }),
         ]),
         mitigations: this.formBuilder.array([this.formBuilder.control("")]),
+        accomplishments: this.formBuilder.array([this.formBuilder.control("")]),
         notes: [""],
       });
     }
@@ -145,6 +154,10 @@ export class LogItemModal implements OnInit {
 
   get mitigations() {
     return this.formGroup.get("mitigations") as FormArray;
+  }
+
+  get accomplishments() {
+    return this.formGroup.get("accomplishments") as FormArray;
   }
 
   formarrayGetName(which: string) {
@@ -281,6 +294,14 @@ export class LogItemModal implements OnInit {
     this.mitigations.removeAt(i);
   }
 
+  clickAddAccomplishment() {
+    this.accomplishments.push(this.formBuilder.control(""));
+  }
+
+  deleteAccomplishment(i) {
+    this.accomplishments.removeAt(i);
+  }
+
   onSaveClick() {
     // console.log(this.formGroup.value);
 
@@ -293,6 +314,7 @@ export class LogItemModal implements OnInit {
       symptoms: {},
       goodThings: {},
       mitigations: [],
+      accomplishments: [],
       notes: this.formGroup.value.notes,
     };
     for (const symptom of this.formGroup.value.symptoms) {
@@ -303,6 +325,9 @@ export class LogItemModal implements OnInit {
     }
     for (const mitigation of this.formGroup.value.mitigations) {
       if (mitigation) data.mitigations.push(mitigation);
+    }
+    for (const accomp of this.formGroup.value.accomplishments) {
+      if (accomp) data.accomplishments.push(accomp);
     }
 
     if (this.logItem) {

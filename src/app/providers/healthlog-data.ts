@@ -14,31 +14,7 @@ import { UserData } from "./user-data";
 import firebase from "firebase/app";
 import "firebase/firestore";
 import { AngularFireAuth } from "@angular/fire/auth";
-
-export interface LogItemDisplay {
-  data: LogItem;
-  doc: firebase.firestore.QueryDocumentSnapshot;
-  showDatetime: boolean;
-  state: "new" | "initial" | "edited" | "deleted";
-}
-
-export interface LogItem {
-  time: firebase.firestore.Timestamp;
-  symptoms: NumberMap;
-  goodThings?: NumberMap;
-  mitigations: string[];
-  notes: string;
-  uid?: string;
-}
-
-export interface NumberMap {
-  [key: string]: number;
-}
-
-export interface NumberMapChange {
-  key: string;
-  value: number | "deleted";
-}
+import { LogItem } from "../interfaces/healthlog";
 
 @Injectable({
   providedIn: "root",
@@ -182,6 +158,7 @@ export class HealthlogData {
             const symptoms = doc.data().symptoms;
             const goodThings = doc.data().goodThings;
             const mitigations = doc.data().mitigations;
+            const accomplishments = doc.data().accomplishments;
             const time = format(doc.data().time.toDate(), "yyyy-MM-dd h:mm a");
             const notes = doc.data().notes || "";
             queryWords.forEach((word) => {
@@ -199,6 +176,12 @@ export class HealthlogData {
               }
               for (const mitigation of mitigations) {
                 if (mitigation.toLowerCase().indexOf(word) > -1) {
+                  matches = true;
+                  return;
+                }
+              }
+              for (const accomp of accomplishments) {
+                if (accomp.toLowerCase().indexOf(word) > -1) {
                   matches = true;
                   return;
                 }

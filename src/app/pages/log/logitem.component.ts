@@ -42,12 +42,13 @@ import {
 import firebase from "firebase/app";
 import "firebase/firestore";
 import {
-  HealthlogData,
+  calculateNumberMapChanges,
+  calculateStringArrayChanges,
   LogItem,
-  LogItemDisplay,
+  LogItemChange,
   NumberMap,
   NumberMapChange,
-} from "../../providers/healthlog-data";
+} from "../../interfaces/healthlog";
 import { AnimUtil } from "../../util/AnimUtil";
 import { DateUtil } from "../../util/DateUtil";
 import { LogItemModal } from "./logitem.modal";
@@ -184,93 +185,130 @@ export class LogItemComponent implements OnInit {
   }
 
   private processDataChanges(before: LogItem, after: LogItem) {
-    const updates: {
-      symptom?: NumberMapChange[];
-      goodThing?: NumberMapChange[];
-      mitigation?: string[];
-      notes?: boolean;
-    } = {};
+    const updates: LogItemChange = {};
 
     // check for changes
-    const symptomUpdates = this.checkNumberMapChanges(
+    const symptomUpdates = calculateNumberMapChanges(
       before ? before.symptoms : {},
       after.symptoms
     );
-    if (symptomUpdates.length > 0) updates.symptom = symptomUpdates;
+    if (symptomUpdates.length > 0) updates.symptoms = symptomUpdates;
 
-    const goodThingUpdates = this.checkNumberMapChanges(
+    const goodThingUpdates = calculateNumberMapChanges(
       before ? before.goodThings : {},
       after.goodThings
     );
-    if (goodThingUpdates.length > 0) updates.goodThing = goodThingUpdates;
+    if (goodThingUpdates.length > 0) updates.goodThings = goodThingUpdates;
 
-    const mitigationUpdates = this.checkStringArrayChanges(
+    const mitigationUpdates = calculateStringArrayChanges(
       before ? before.mitigations : [],
       after.mitigations
     );
-    if (mitigationUpdates.length > 0) updates.mitigation = mitigationUpdates;
+    if (mitigationUpdates.length > 0) updates.mitigations = mitigationUpdates;
+
+    const accomplishmentUpdates = calculateStringArrayChanges(
+      before ? before.accomplishments : [],
+      after.accomplishments
+    );
+    if (accomplishmentUpdates.length > 0)
+      updates.accomplishments = accomplishmentUpdates;
 
     let beforeNotes: string = before ? before.notes : "";
     if (beforeNotes !== after.notes) {
-      updates.notes = true;
+      updates.notes = after.notes;
     }
 
+    let beforeTime = before ? before.time : null;
+    if (
+      beforeTime == null ||
+      beforeTime.toDate().valueOf() !== after.time.toDate().valueOf()
+    ) {
+      updates.time = firebase.firestore.Timestamp.fromDate(after.time.toDate());
+    }
+
+    // apply the updates
     if (Object.keys(updates).length > 0) {
       setTimeout(() => {
         console.log("logitem: updates:");
         console.log(updates);
 
         let count = 0;
-        for (const key of ["symptom", "goodThing"]) {
-          const changes: NumberMapChange[] = updates[key];
-          if (!changes) continue;
-
-          for (const change of changes) {
-            if (change.value === "deleted") continue;
-
-            // pulse the row in staggered fashion
-            const severityColor =
-              key === "symptom"
-                ? this.valueToSeverityNegative(change.value)
-                : this.valueToSeverityPositive(change.value);
-            setTimeout(() => {
-              this.backgroundFlash(
-                this.getElementById(key + "-" + change.key),
-                `var(--ion-color-${severityColor})`
-              ).play();
-              // pulse the badge
-              AnimUtil.create(
-                this.animationCtrl,
-                AnimUtil.ANIM_FROM_2X,
-                this.getElementById(key + "-badge" + "-" + change.key)
-              ).play();
-            }, 100 * count);
-
-            count++;
-          }
+        // symptoms
+        if (updates.symptoms) {
+          count = this.processNumberMapChanges(
+            updates.symptoms,
+            "symptom",
+            true,
+            count
+          );
         }
 
-        if (updates.mitigation) {
-          for (const v of updates.mitigation) {
-            // pulse the row in staggered fashion
-            setTimeout(() => {
-              this.backgroundFlash(
-                this.getElementById("mitigation" + "-" + v),
-                `var(--ion-color-medium)`
-              ).play();
-            }, 100 * count);
-            count++;
-          }
+        // good things
+        if (updates.goodThings) {
+          count = this.processNumberMapChanges(
+            updates.symptoms,
+            "goodThing",
+            false,
+            count
+          );
         }
+
+        // // good things
+        // if (updates.goodThings) {
+        //   for (const change of updates.goodThings) {
+        //     if (change.value === "deleted") continue;
+
+        //     // pulse the row in staggered fashion
+        //     const severityColor = this.valueToSeverityNegative(change.value);
+        //     this.setupNumberMapAnimation(
+        //       100 * count,
+        //       "symptom-" + change.key,
+        //       severityColor,
+        //       "symptom-badge-" + change.key
+        //     );
+        //     count++;
+        //   }
+        // }
+
+        if (updates.mitigations) {
+          count = this.processStringArrayChanges(
+            updates.mitigations,
+            "mitigation",
+            count
+          );
+        }
+
+        if (updates.accomplishments) {
+          count = this.processStringArrayChanges(
+            updates.accomplishments,
+            "accomplishment",
+            count
+          );
+        }
+
+        // if (updates.mitigation) {
+        //   for (const v of updates.mitigation) {
+        //     // pulse the row in staggered fashion
+        //     setTimeout(() => {
+        //       this.backgroundFlash(
+        //         this.getElementById("mitigation" + "-" + v),
+        //         `var(--ion-color-medium)`
+        //       ).play();
+        //     }, 100 * count);
+        //     count++;
+        //   }
+        // }
 
         if (updates.notes) {
-          setTimeout(() => {
-            this.backgroundFlash(
-              this.getElementById("notes"),
-              `var(--ion-color-medium)`
-            ).play();
-          }, 100 * count);
+          this.setupStringAnimation(100 * count, "notes");
           count++;
+          // setTimeout(() => {
+          //   this.backgroundFlash(
+          //     this.getElementById("notes"),
+          //     `var(--ion-color-medium)`
+          //   ).play();
+          // }, 100 * count);
+          // count++;
         }
 
         // if (updates.goodThings) {
@@ -296,6 +334,73 @@ export class LogItemComponent implements OnInit {
     }
   }
 
+  processStringArrayChanges(
+    changes: string[],
+    nameSingular: string,
+    startCount: number = 0
+  ): number {
+    let count: number = startCount;
+    for (const v of changes) {
+      this.setupStringAnimation(100 * count, nameSingular + "-" + v);
+      count++;
+    }
+    return count;
+  }
+
+  setupStringAnimation(delay: number, id: string) {
+    setTimeout(() => {
+      this.backgroundFlash(
+        this.getElementById(id),
+        `var(--ion-color-medium)`
+      ).play();
+    }, delay);
+  }
+
+  processNumberMapChanges(
+    changes: NumberMapChange[],
+    nameSingular: string,
+    isNegative: boolean,
+    startCount: number = 0
+  ): number {
+    let count: number = startCount;
+    for (const change of changes) {
+      if (change.value === "deleted") continue;
+
+      // pulse the row in staggered fashion
+      const severityColor = isNegative
+        ? this.valueToSeverityNegative(change.value)
+        : this.valueToSeverityPositive(change.value);
+      this.setupNumberMapAnimation(
+        100 * count,
+        nameSingular + "-" + change.key,
+        severityColor,
+        nameSingular + "-badge-" + change.key
+      );
+      count++;
+    }
+    return count;
+  }
+
+  setupNumberMapAnimation(
+    delay: number,
+    id: string,
+    severityColor: string,
+    badgeId: string
+  ) {
+    setTimeout(() => {
+      this.backgroundFlash(
+        this.getElementById(id),
+        `var(--ion-color-${severityColor})`
+      ).play();
+      // pulse the badge
+      AnimUtil.create(
+        this.animationCtrl,
+        AnimUtil.ANIM_FROM_2X,
+        this.getElementById(badgeId)
+      ).play();
+    }, delay);
+  }
+
   backgroundFlash(elem: HTMLElement, backgroundStyle: string) {
     return this.animationCtrl
       .create()
@@ -311,48 +416,5 @@ export class LogItemComponent implements OnInit {
           background: "none",
         },
       ]);
-  }
-
-  checkStringArrayChanges(before?: string[], after?: string[]) {
-    return after.filter((v) => !before.includes(v));
-  }
-
-  /**
-   * check changes for NumberMap type items
-   * @param before
-   * @param after
-   */
-  checkNumberMapChanges(
-    before?: NumberMap,
-    after?: NumberMap
-  ): NumberMapChange[] {
-    const updates: NumberMapChange[] = [];
-    const beforeKeys: string[] = before ? Object.keys(before) : [];
-    const afterKeys: string[] = after ? Object.keys(after) : [];
-
-    const beforeNotAfter = beforeKeys.filter((v) => !afterKeys.includes(v));
-    beforeNotAfter.forEach((key) => {
-      updates.push({ key: key, value: "deleted" });
-    });
-
-    const afterNotBefore = afterKeys.filter((v) => !beforeKeys.includes(v));
-    afterNotBefore.forEach((key) => {
-      updates.push({
-        key: key,
-        value: after[key],
-      });
-    });
-
-    const both = afterKeys.filter((v) => beforeKeys.includes(v));
-    both.forEach((key) => {
-      if (before[key] !== after[key]) {
-        updates.push({
-          key: key,
-          value: after[key],
-        });
-      }
-    });
-
-    return updates;
   }
 }
