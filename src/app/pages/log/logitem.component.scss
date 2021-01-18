@@ -1,5 +1,8 @@
 :host {
   display: block;
+  box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
+  margin: 8px;
+  border-radius: 8px;
 }
 
 .symptom,
@@ -36,6 +39,9 @@ h3 {
 ion-item {
   // overflow: visible;
   --padding-start: 8px;
+  border: 1px solid var(--ion-color-step-300);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
 
   h3,
   p {
@@ -66,8 +72,11 @@ ion-item-divider {
   --padding-start: 8px;
   --background: var(--ion-color-step-100);
   --color: var(--ion-text-color);
-
-  border: none;
+  border-top: 1px solid var(--ion-color-step-300);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  border-right: 1px solid var(--ion-color-step-300);
+  border-left: 1px solid var(--ion-color-step-300);
 
   // border-top: none;
   // border-bottom: 1px solid var(--ion-color-step-100);

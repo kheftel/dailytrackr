@@ -73,7 +73,6 @@ export class LogItemComponent implements OnInit {
 
   _logItem: LogItem;
   @Input() set logItem(item) {
-    console.log('logitem: set Logitem');
     const before: LogItem = this._logItem;
     const after: LogItem = item;
 
@@ -82,7 +81,7 @@ export class LogItemComponent implements OnInit {
     this.markForCheck();
 
     // check for changes
-    this.processDataChanges(before, after);
+    if (before) this.processDataChanges(before, after);
   }
   get logItem(): LogItem {
     return this._logItem;
@@ -162,11 +161,6 @@ export class LogItemComponent implements OnInit {
       item.name = key;
       item.severity = "";
       item.severity = this.valueToSeverityNegative(item.value);
-      // if (item.value <= 2) item.severity = "s1";
-      // else if (item.value <= 4) item.severity = "s2";
-      // else if (item.value <= 6) item.severity = "s3";
-      // else if (item.value <= 8) item.severity = "s4";
-      // else item.severity = "s5";
       ret.push(item);
     }
     return ret;
@@ -180,25 +174,21 @@ export class LogItemComponent implements OnInit {
       item.name = key;
       item.severity = "";
       item.severity = this.valueToSeverityPositive(item.value);
-      // if (item.value <= 1) item.severity = "s5";
-      // else if (item.value <= 2) item.severity = "s4";
-      // else if (item.value <= 4) item.severity = "s3";
-      // else if (item.value <= 7) item.severity = "s2";
-      // else item.severity = "s1";
       ret.push(item);
     }
     return ret;
   }
 
-  processDataChanges(before: LogItem, after: LogItem) {
-    if (!before) {
-      // initial data set, just care about updates
-      return;
-    }
+  triggerUpdateAnimation() {
+    this.processDataChanges(null, this._logItem);
+  }
 
+  private processDataChanges(before: LogItem, after: LogItem) {
     const updates: {
       symptom?: NumberMapChange[];
       goodThing?: NumberMapChange[];
+      mitigation?: string[];
+      notes?: boolean;
     } = {};
 
     // check for changes
@@ -214,6 +204,17 @@ export class LogItemComponent implements OnInit {
     );
     if (goodThingUpdates.length > 0) updates.goodThing = goodThingUpdates;
 
+    const mitigationUpdates = this.checkStringArrayChanges(
+      before ? before.mitigations : [],
+      after.mitigations
+    );
+    if (mitigationUpdates.length > 0) updates.mitigation = mitigationUpdates;
+
+    let beforeNotes: string = before ? before.notes : "";
+    if (beforeNotes !== after.notes) {
+      updates.notes = true;
+    }
+
     if (Object.keys(updates).length > 0) {
       setTimeout(() => {
         console.log("logitem: updates:");
@@ -227,49 +228,49 @@ export class LogItemComponent implements OnInit {
           for (const change of changes) {
             if (change.value === "deleted") continue;
 
-            // pulse the row
+            // pulse the row in staggered fashion
             const severityColor =
               key === "symptom"
                 ? this.valueToSeverityNegative(change.value)
                 : this.valueToSeverityPositive(change.value);
             setTimeout(() => {
-              this.animationCtrl
-                .create()
-                .addElement(this.getElementById(key + "-" + change.key))
-                .duration(500)
-                .keyframes([
-                  // {
-                  //   offset: 0,
-                  //   background: "none",
-                  //   transform: "scale(1)",
-                  // },
-                  {
-                    offset: 0,
-                    background: `var(--ion-color-${severityColor})`,
-                    transform: "scale(1)",
-                  },
-                  {
-                    offset: 1,
-                    background: "none",
-                    transform: "scale(1)",
-                  },
-                ])
-                .play();
-              setTimeout(() => {
-                // then pulse the badge
-                this.animationCtrl
-                  .create()
-                  .addElement(
-                    this.getElementById(key + "-badge" + "-" + change.key)
-                  )
-                  .duration(500)
-                  .fromTo("transform", "scale(2)", "scale(1)")
-                  .play();
-              }, 0);
+              this.backgroundFlash(
+                this.getElementById(key + "-" + change.key),
+                `var(--ion-color-${severityColor})`
+              ).play();
+              // pulse the badge
+              AnimUtil.create(
+                this.animationCtrl,
+                AnimUtil.ANIM_FROM_2X,
+                this.getElementById(key + "-badge" + "-" + change.key)
+              ).play();
             }, 100 * count);
 
             count++;
           }
+        }
+
+        if (updates.mitigation) {
+          for (const v of updates.mitigation) {
+            // pulse the row in staggered fashion
+            setTimeout(() => {
+              this.backgroundFlash(
+                this.getElementById("mitigation" + "-" + v),
+                `var(--ion-color-medium)`
+              ).play();
+            }, 100 * count);
+            count++;
+          }
+        }
+
+        if (updates.notes) {
+          setTimeout(() => {
+            this.backgroundFlash(
+              this.getElementById("notes"),
+              `var(--ion-color-medium)`
+            ).play();
+          }, 100 * count);
+          count++;
         }
 
         // if (updates.goodThings) {
@@ -293,6 +294,27 @@ export class LogItemComponent implements OnInit {
         // });
       }, 0);
     }
+  }
+
+  backgroundFlash(elem: HTMLElement, backgroundStyle: string) {
+    return this.animationCtrl
+      .create()
+      .addElement(elem)
+      .duration(500)
+      .keyframes([
+        {
+          offset: 0,
+          background: backgroundStyle,
+        },
+        {
+          offset: 1,
+          background: "none",
+        },
+      ]);
+  }
+
+  checkStringArrayChanges(before?: string[], after?: string[]) {
+    return after.filter((v) => !before.includes(v));
   }
 
   /**

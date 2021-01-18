@@ -53,6 +53,7 @@ import { AngularFireAuth } from "@angular/fire/auth";
 import { LogItemComponent } from "./logitem.component";
 import { DateUtil } from "../../util/DateUtil";
 import { fi } from "date-fns/locale";
+import { AnimUtil } from "../../util/AnimUtil";
 
 @Component({
   selector: "page-log",
@@ -404,9 +405,10 @@ export class LogPage implements OnInit, AfterViewInit {
     const change = this.changeQueue.shift();
 
     const id = change.doc.id;
+    const component = this.getItemComponentById(id);
+    const item = this.getItem(id);
     const data: LogItem = change.doc.data() as LogItem;
     const time = data.time.toDate().toISOString();
-    const item = this.getItem(id);
     const oldIndex: number = change.oldIndex;
     const newIndex: number = change.newIndex;
     console.log(
@@ -416,60 +418,31 @@ export class LogPage implements OnInit, AfterViewInit {
 
     switch (change.type) {
       case "added":
-        // does it already exist in the list? (this shouldn't happen)
         // add it
-        this.dataList.splice(
-          change.newIndex,
-          0,
-          this.docToLogItem(change.doc, true)
-        );
+        this.dataList.splice(newIndex, 0, this.docToLogItem(change.doc, true));
         // wait a frame for the item to be created, then animate it
         setTimeout(() => {
-          this.doAnimAdd(id);
-          this.scheduleNextQueueProcessing();
+          AnimUtil.create(
+            this.animationCtrl,
+            AnimUtil.ANIM_ITEM_CREATED,
+            this.getItemElementById(id)
+          )
+            .play()
+            .then(() => {
+              this.getItemComponentById(id).triggerUpdateAnimation();
+              this.scheduleNextQueueProcessing();
+            });
         }, 0);
         break;
       case "modified":
         // find it in list and modify it
         if (!item) throw new Error("could not find item " + id);
-        // symptoms
-        // let symptomUpdates = [];
-        // let oldKeys: string[] = Object.keys(existingData.symptoms);
-        // let newKeys: string[] = Object.keys(data.symptoms);
-
-        // let oldNotNew = oldKeys.filter((v) => !newKeys.includes(v));
-        // oldNotNew.forEach((key) => {
-        //   symptomUpdates.push({ key: key, value: "deleted" });
-        // });
-
-        // let newNotOld = newKeys.filter((v) => !oldKeys.includes(v));
-        // newNotOld.forEach((key) => {
-        //   symptomUpdates.push({
-        //     key: key,
-        //     value: data.symptoms[key],
-        //   });
-        // });
-
-        // let both = newKeys.filter((v) => oldKeys.includes(v));
-        // both.forEach((key) => {
-        //   if (existingData.symptoms[key] !== data.symptoms[key]) {
-        //     symptomUpdates.push({
-        //       key: key,
-        //       value: data.symptoms[key],
-        //     });
-        //   }
-        // });
-
-        // console.log("log: symptom updates:");
-        // console.log(symptomUpdates);
-
         // make sure that the data actually changed???
 
         // change the data to cause a re-calculation of height
         // this.dataList[oldIndex] = { ...item };
         item.data = { ...data };
-        const c = this.getItemComponentById(id);
-        c.markForCheck();
+        // component.markForCheck();
 
         // did it change order?
         if (oldIndex === newIndex) {
@@ -488,7 +461,7 @@ export class LogPage implements OnInit, AfterViewInit {
           const delta: number = newIndex - oldIndex;
           const sign = delta > 0 ? 1 : -1;
           // moved by 1
-          if (Math.abs(delta) === 1) {
+          if (delta === -1) {
             const hOld = this.getItemHeightByIndex(oldIndex);
             const hNew = this.getItemHeightByIndex(newIndex);
             const elemOld = this.getItemElementByIndex(oldIndex);
@@ -500,7 +473,7 @@ export class LogPage implements OnInit, AfterViewInit {
               this.prepList(this.dataList);
               this.scheduleNextQueueProcessing();
             });
-          } else if (delta > 1) {
+          } else if (delta > 0) {
             // moved more than 1 position down
             // move all but 1 items up by the height of
             // the item at oldIndex
@@ -545,28 +518,34 @@ export class LogPage implements OnInit, AfterViewInit {
         break;
       case "removed":
         // it's been deleted! remove from list
-        this.doAnimDelete(id).then(() => {
-          // if not at end of list, move all remaining items up one slot
-          if (oldIndex < this.dataList.length - 1) {
-            const heightToMoveUp = this.getItemHeightByIndex(oldIndex);
-            for (let i = oldIndex + 1; i < this.dataList.length; i++) {
-              const elem = this.getItemElementByIndex(i);
-              const p = this.shiftElementY(elem, -1 * heightToMoveUp, 500);
-              if (i === this.dataList.length - 1) {
-                p.then(() => {
-                  // delete from list and re-layout
-                  this.dataList.splice(oldIndex, 1);
-                  this.prepList(this.dataList);
-                  this.scheduleNextQueueProcessing();
-                });
+        AnimUtil.create(
+          this.animationCtrl,
+          AnimUtil.ANIM_ITEM_DELETED,
+          this.getItemElementById(id)
+        )
+          .play()
+          .then(() => {
+            // if not at end of list, move all remaining items up one slot
+            if (oldIndex < this.dataList.length - 1) {
+              const heightToMoveUp = this.getItemHeightByIndex(oldIndex);
+              for (let i = oldIndex + 1; i < this.dataList.length; i++) {
+                const elem = this.getItemElementByIndex(i);
+                const p = this.shiftElementY(elem, -1 * heightToMoveUp, 500);
+                if (i === this.dataList.length - 1) {
+                  p.then(() => {
+                    // delete from list and re-layout
+                    this.dataList.splice(oldIndex, 1);
+                    this.prepList(this.dataList);
+                    this.scheduleNextQueueProcessing();
+                  });
+                }
               }
+            } else {
+              this.dataList.splice(oldIndex, 1);
+              this.prepList(this.dataList);
+              this.scheduleNextQueueProcessing();
             }
-          } else {
-            this.dataList.splice(oldIndex, 1);
-            this.prepList(this.dataList);
-            this.scheduleNextQueueProcessing();
-          }
-        });
+          });
         break;
     }
   }
@@ -603,7 +582,7 @@ export class LogPage implements OnInit, AfterViewInit {
   prepList(list: LogItemDisplay[]) {
     list.sort(this.sortByTime);
 
-    // reset the weird bug caused by tweening
+    // reset the weird bug caused by tweening transform translate
     list.forEach((item) => {
       const el = this.getItemElementById(item.doc.id);
       if (el) this.resetElementY(el);
@@ -932,16 +911,6 @@ export class LogPage implements OnInit, AfterViewInit {
       .play();
   }
 
-  doAnimAdd(id: string, duration: number = 500): Promise<void> {
-    const elem = this.getItemElementById(id);
-    return this.animationCtrl
-      .create("onAdd")
-      .addElement(elem)
-      .duration(duration)
-      .fromTo("transform", "scale(0)", "scale(1)")
-      .play();
-  }
-
   doAnimEdit(id: string, duration: number = 1000): Promise<void> {
     const elem = this.getItemElementById(id);
     return this.animationCtrl
@@ -963,25 +932,19 @@ export class LogPage implements OnInit, AfterViewInit {
   }
 
   shiftElementY(itemElement: HTMLElement, px: number, milliseconds: number) {
-    const seconds: number = milliseconds / 1000;
     const elem = itemElement;
 
     // markForCheck??
 
-    // zero out transform
-    // gsap.set(elem, { y: 0 });
-
     // tween to desired end
-    return (
-      this.animationCtrl
-        .create("shiftItemElementY")
-        .addElement(elem)
-        .duration(milliseconds)
-        // .beforeClearStyles(["transform"])
-        .fromTo("transform", "translateY(0px)", `translateY(${px}px)`)
-        .afterStyles({ transform: "translateY(0px)" })
-        .play()
-    );
+    return this.animationCtrl
+      .create("shiftItemElementY")
+      .addElement(elem)
+      .duration(milliseconds)
+      .easing("ease-out")
+      .fromTo("transform", "translateY(0px)", `translateY(${px}px)`)
+      .afterStyles({ transform: "translateY(0px)" })
+      .play();
   }
 
   resetElementY(elem: HTMLElement) {
@@ -993,96 +956,96 @@ export class LogPage implements OnInit, AfterViewInit {
       .play();
   }
 
-  shiftListY(
-    px: number,
-    seconds: number,
-    startIndex: number = 0,
-    onComplete?: () => void
-  ) {
-    const cList = this.listItems.toArray();
-    const subList = cList.filter((v, i) => i >= startIndex);
+  // shiftListY(
+  //   px: number,
+  //   seconds: number,
+  //   startIndex: number = 0,
+  //   onComplete?: () => void
+  // ) {
+  //   const cList = this.listItems.toArray();
+  //   const subList = cList.filter((v, i) => i >= startIndex);
 
-    subList.forEach((c) => {
-      c.markForCheck();
-      const elem = document.getElementById(c.logItemId);
-      // this.renderer.setStyle(elem, "transform", "none");
-      gsap.set(elem, { y: 0 });
-      gsap.to(elem, { y: px, duration: seconds });
-    });
-    gsap.delayedCall(seconds, () => {
-      // reset tween
-      subList.forEach((c) => {
-        const elem = document.getElementById(c.logItemId);
-        gsap.set(elem, { y: 0 });
-        // this.renderer.removeStyle(elem, "transform");
-      });
+  //   subList.forEach((c) => {
+  //     c.markForCheck();
+  //     const elem = document.getElementById(c.logItemId);
+  //     // this.renderer.setStyle(elem, "transform", "none");
+  //     gsap.set(elem, { y: 0 });
+  //     gsap.to(elem, { y: px, duration: seconds });
+  //   });
+  //   gsap.delayedCall(seconds, () => {
+  //     // reset tween
+  //     subList.forEach((c) => {
+  //       const elem = document.getElementById(c.logItemId);
+  //       gsap.set(elem, { y: 0 });
+  //       // this.renderer.removeStyle(elem, "transform");
+  //     });
 
-      cList.forEach((c) => c.markForCheck());
+  //     cList.forEach((c) => c.markForCheck());
 
-      if (onComplete) {
-        onComplete();
-      }
-    });
-  }
+  //     if (onComplete) {
+  //       onComplete();
+  //     }
+  //   });
+  // }
 
-  onAnimationEnd(event: AnimationEvent) {
-    // console.log("animation event");
-    // console.log(event);
-    // console.log(event.element.id);
+  // onAnimationEnd(event: AnimationEvent) {
+  //   // console.log("animation event");
+  //   // console.log(event);
+  //   // console.log(event.element.id);
 
-    console.log(
-      "log: animationend: " +
-        event.fromState +
-        " => " +
-        event.toState +
-        ": " +
-        event.element.id
-    );
-    // console.log(event);
+  //   console.log(
+  //     "log: animationend: " +
+  //       event.fromState +
+  //       " => " +
+  //       event.toState +
+  //       ": " +
+  //       event.element.id
+  //   );
+  //   // console.log(event);
 
-    const el = event.element;
-    const id = el ? el.id : null;
-    const cList = this.listItems.toArray();
-    const cIndex: number = cList.findIndex((c) => c.logItemId === id);
-    const dataIndex: number = this.getItemIndex(id);
+  //   const el = event.element;
+  //   const id = el ? el.id : null;
+  //   const cList = this.listItems.toArray();
+  //   const cIndex: number = cList.findIndex((c) => c.logItemId === id);
+  //   const dataIndex: number = this.getItemIndex(id);
 
-    switch (event.toState) {
-      case "deleted":
-        if (dataIndex >= 0 && cIndex < cList.length - 1) {
-          // make everything below the deleted element move up to take its place
-          const heightOfDeleted = document.getElementById(id).clientHeight;
-          this.shiftListY(-1 * heightOfDeleted, 1, cIndex + 1, () => {
-            // remove from model and view
-            this.dataList.splice(dataIndex, 1);
-            this.prepList(this.dataList);
-          });
-        }
-        break;
-      case "edited":
-        // cList.forEach((c, i) => console.log(this.getItemHeightByIndex(i)));
+  //   switch (event.toState) {
+  //     case "deleted":
+  //       if (dataIndex >= 0 && cIndex < cList.length - 1) {
+  //         // make everything below the deleted element move up to take its place
+  //         const heightOfDeleted = document.getElementById(id).clientHeight;
+  //         this.shiftListY(-1 * heightOfDeleted, 1, cIndex + 1, () => {
+  //           // remove from model and view
+  //           this.dataList.splice(dataIndex, 1);
+  //           this.prepList(this.dataList);
+  //         });
+  //       }
+  //       break;
+  //     case "edited":
+  //       // cList.forEach((c, i) => console.log(this.getItemHeightByIndex(i)));
 
-        // go back to initial state after editing
-        const item = this.getItem(event.element.id);
-        item.state = "initial";
-        break;
-    }
-  }
+  //       // go back to initial state after editing
+  //       const item = this.getItem(event.element.id);
+  //       item.state = "initial";
+  //       break;
+  //   }
+  // }
 
-  async presentFilter() {
-    const modal = await this.modalCtrl.create({
-      component: ScheduleFilterPage,
-      swipeToClose: true,
-      presentingElement: this.routerOutlet.nativeEl,
-      componentProps: { excludedTracks: this.excludeTracks },
-    });
-    await modal.present();
+  // async presentFilter() {
+  //   const modal = await this.modalCtrl.create({
+  //     component: ScheduleFilterPage,
+  //     swipeToClose: true,
+  //     presentingElement: this.routerOutlet.nativeEl,
+  //     componentProps: { excludedTracks: this.excludeTracks },
+  //   });
+  //   await modal.present();
 
-    const { data } = await modal.onWillDismiss();
-    if (data) {
-      this.excludeTracks = data;
-      this.refreshDataList();
-    }
-  }
+  //   const { data } = await modal.onWillDismiss();
+  //   if (data) {
+  //     this.excludeTracks = data;
+  //     this.refreshDataList();
+  //   }
+  // }
 
   async addFavorite(slidingItem: HTMLIonItemSlidingElement, sessionData: any) {
     if (this.userData.hasFavorite(sessionData.name)) {

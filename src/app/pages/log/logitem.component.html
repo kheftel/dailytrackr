@@ -1,4 +1,4 @@
-<ion-item-divider sticky>
+<ion-item-divider>
   <ion-label>
     <h3>{{title}}</h3>
   </ion-label>
@@ -21,13 +21,13 @@
     </ng-container>
 
     <h3 style="margin-top:10px" *ngIf="logItem.mitigations.length">Mitigations:</h3>
-    <p *ngFor="let m of logItem.mitigations" class="symptom ion-color-medium">
+    <p id="mitigation-{{m}}" *ngFor="let m of logItem.mitigations" class="symptom ion-color-medium">
       {{m}}
     </p>
 
     <ng-container *ngIf="logItem.notes">
       <h3 style="margin-top:10px">Notes:</h3>
-      <p class="notes ion-color-medium">
+      <p id="notes" class="notes ion-color-medium">
         {{logItem.notes}}
       </p>
     </ng-container>
