@@ -215,12 +215,12 @@ export class LogItemComponent implements OnInit {
     if (accomplishmentUpdates.length > 0)
       updates.accomplishments = accomplishmentUpdates;
 
-    let beforeNotes: string = before ? before.notes : "";
+    const beforeNotes: string = before ? before.notes : "";
     if (beforeNotes !== after.notes) {
       updates.notes = after.notes;
     }
 
-    let beforeTime = before ? before.time : null;
+    const beforeTime = before ? before.time : null;
     if (
       beforeTime == null ||
       beforeTime.toDate().valueOf() !== after.time.toDate().valueOf()
