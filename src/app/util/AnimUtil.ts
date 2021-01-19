@@ -8,6 +8,8 @@ interface AnimDefinitions {
 
 export class AnimUtil {
   public static readonly ANIM_HALF_PULSE: string = "animHalfPulse";
+  public static readonly ANIM_HALF_PULSE_LEFT_JUSTIFIED: string =
+    "animHalfPulseLeftJustified";
   public static readonly ANIM_PULSE: string = "animPulse";
   public static readonly ANIM_ITEM_CREATED: string = "animItemCreated";
   public static readonly ANIM_ITEM_DELETED: string = "animItemDeleted";
@@ -60,32 +62,38 @@ export class AnimUtil {
         .fromTo("transform", "scale(1)", "scale(0)"),
     [AnimUtil.ANIM_ITEM_DELETED]: (animation) =>
       animation
-        .easing("ease-in")
+        .easing("cubic-bezier(.75,0,1,1)")
         .duration(1000)
         .beforeStyles({ position: "relative", "z-index": 999 })
         .fromTo(
           "transform",
-          "translateY(0) scale(1) rotate(0)",
-          "translateY(300px) scale(0) rotate(27deg)"
+          "translateY(0) rotate(0)",
+          "translateY(500px) rotate(27deg)"
         )
         .fromTo("opacity", 1, 0),
     [AnimUtil.ANIM_ITEM_CREATED]: (animation) =>
       animation
-        .easing("ease-out")
-        .duration(1000)
+        .easing("cubic-bezier(.80,0,1,1)")
+        .duration(500)
         .beforeStyles({ position: "relative", "z-index": 999 })
         .fromTo(
           "transform",
-          "translateY(300px) scale(0) rotate(27deg)",
+          "translateY(0) scale(2) rotate(27deg)",
           "translateY(0) scale(1) rotate(0)"
         )
-        .afterClearStyles(["position", "z-index"])
-        .fromTo("opacity", 0, 1),
+        .fromTo("opacity", 0, 1)
+        .afterClearStyles(["position", "z-index"]),
     [AnimUtil.ANIM_HALF_PULSE]: (animation) =>
       animation
         .easing("ease-out")
         .fromTo("transform", "scale(1.1)", "scale(1)")
-        .fromTo("opacity", 0, 1)
+        .duration(500),
+    [AnimUtil.ANIM_HALF_PULSE_LEFT_JUSTIFIED]: (animation) =>
+      animation
+        .easing("ease-out")
+        .beforeStyles({ "transform-origin": "left center" })
+        .fromTo("transform", "scale(1.2)", "scale(1)")
+        .afterClearStyles(["transform-origin"])
         .duration(500),
     [AnimUtil.ANIM_FROM_2X]: (animation) =>
       animation

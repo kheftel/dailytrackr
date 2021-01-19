@@ -36,8 +36,13 @@ export interface LogItemDisplay {
   state: "new" | "initial" | "edited" | "deleted";
 }
 
-export function calculateStringArrayChanges(before?: string[], after?: string[]) {
-  return after.filter((v) => !before.includes(v));
+export function calculateStringArrayChanges(
+  before?: string[],
+  after?: string[]
+): string[] {
+  if (!before) return after.sort();
+  if (!after) return [];
+  return after.filter((v) => !before.includes(v)).sort();
 }
 
 /**
@@ -50,8 +55,8 @@ export function calculateNumberMapChanges(
   after?: NumberMap
 ): NumberMapChange[] {
   const updates: NumberMapChange[] = [];
-  const beforeKeys: string[] = before ? Object.keys(before) : [];
-  const afterKeys: string[] = after ? Object.keys(after) : [];
+  const beforeKeys: string[] = before ? Object.keys(before).sort() : [];
+  const afterKeys: string[] = after ? Object.keys(after).sort() : [];
 
   const beforeNotAfter = beforeKeys.filter((v) => !afterKeys.includes(v));
   beforeNotAfter.forEach((key) => {
@@ -76,5 +81,5 @@ export function calculateNumberMapChanges(
     }
   });
 
-  return updates;
+  return updates.sort((a, b) => (a.key < b.key ? -1 : 1));
 }

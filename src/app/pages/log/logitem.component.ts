@@ -78,7 +78,7 @@ export class LogItemComponent implements OnInit {
     const after: LogItem = item;
 
     this._logItem = item;
-    this.title = DateUtil.formatDateTime(this.logItem.time);
+    this.time = DateUtil.formatDateTime(this.logItem.time);
     this.markForCheck();
 
     // check for changes
@@ -103,7 +103,9 @@ export class LogItemComponent implements OnInit {
     id: string;
   }>();
 
-  title: string;
+  time: string;
+
+  public static readonly STAGGER_INTERVAL:number = 100;
 
   constructor(
     private change: ChangeDetectorRef,
@@ -112,7 +114,7 @@ export class LogItemComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.title = DateUtil.formatDateTime(this.logItem.time);
+    this.time = DateUtil.formatDateTime(this.logItem.time);
   }
 
   getElementById(id: string): HTMLElement {
@@ -226,13 +228,20 @@ export class LogItemComponent implements OnInit {
       updates.time = firebase.firestore.Timestamp.fromDate(after.time.toDate());
     }
 
-    // apply the updates
+    // apply the updates next frame, after elements have been constructed/updated
     if (Object.keys(updates).length > 0) {
       setTimeout(() => {
-        console.log("logitem: updates:");
-        console.log(updates);
+        // console.log("logitem: updates:");
+        // console.log(updates);
 
         let count = 0;
+
+        // time
+        if (updates.time) {
+          this.setupTimeAnimation(LogItemComponent.STAGGER_INTERVAL * count, "time");
+          count++;
+        }
+
         // symptoms
         if (updates.symptoms) {
           count = this.processNumberMapChanges(
@@ -246,7 +255,7 @@ export class LogItemComponent implements OnInit {
         // good things
         if (updates.goodThings) {
           count = this.processNumberMapChanges(
-            updates.symptoms,
+            updates.goodThings,
             "goodThing",
             false,
             count
@@ -300,7 +309,7 @@ export class LogItemComponent implements OnInit {
         // }
 
         if (updates.notes) {
-          this.setupStringAnimation(100 * count, "notes");
+          this.setupStringAnimation(LogItemComponent.STAGGER_INTERVAL * count, "notes");
           count++;
           // setTimeout(() => {
           //   this.backgroundFlash(
@@ -341,10 +350,20 @@ export class LogItemComponent implements OnInit {
   ): number {
     let count: number = startCount;
     for (const v of changes) {
-      this.setupStringAnimation(100 * count, nameSingular + "-" + v);
+      this.setupStringAnimation(LogItemComponent.STAGGER_INTERVAL * count, nameSingular + "-" + v);
       count++;
     }
     return count;
+  }
+
+  setupTimeAnimation(delay: number, id: string) {
+    setTimeout(() => {
+      AnimUtil.create(
+        this.animationCtrl,
+        AnimUtil.ANIM_HALF_PULSE_LEFT_JUSTIFIED,
+        this.getElementById(id)
+      ).play();
+    }, delay);
   }
 
   setupStringAnimation(delay: number, id: string) {
@@ -371,7 +390,7 @@ export class LogItemComponent implements OnInit {
         ? this.valueToSeverityNegative(change.value)
         : this.valueToSeverityPositive(change.value);
       this.setupNumberMapAnimation(
-        100 * count,
+        LogItemComponent.STAGGER_INTERVAL * count,
         nameSingular + "-" + change.key,
         severityColor,
         nameSingular + "-badge-" + change.key

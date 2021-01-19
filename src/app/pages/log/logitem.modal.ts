@@ -73,6 +73,7 @@ export class LogItemModal implements OnInit {
     const dNow = new Date();
     const tNow = firebase.firestore.Timestamp.fromDate(dNow);
 
+    // edit mode - apply passed-in data to form
     if (this.logItem) {
       console.log("modal edit mode: " + this.id);
       console.log(this.logItem);
@@ -84,7 +85,7 @@ export class LogItemModal implements OnInit {
       };
 
       const symptoms = [];
-      for (const key in this.logItem.symptoms) {
+      for (const key of Object.keys(this.logItem.symptoms).sort()) {
         symptoms.push(
           this.formBuilder.group({
             name: [key],
@@ -95,7 +96,7 @@ export class LogItemModal implements OnInit {
       formInitData.symptoms = this.formBuilder.array(symptoms);
 
       const goodThings = [];
-      for (const key in this.logItem.goodThings) {
+      for (const key of Object.keys(this.logItem.goodThings).sort()) {
         goodThings.push(
           this.formBuilder.group({
             name: [key],
@@ -107,14 +108,14 @@ export class LogItemModal implements OnInit {
 
       const mitigations = [];
       if(!this.logItem.mitigations) this.logItem.mitigations = [];
-      for (const mitigation of this.logItem.mitigations) {
+      for (const mitigation of this.logItem.mitigations.sort()) {
         mitigations.push(this.formBuilder.control(mitigation));
       }
       formInitData.mitigations = this.formBuilder.array(mitigations);
 
       const accomplishments = [];
       if(!this.logItem.accomplishments) this.logItem.accomplishments = [];
-      for (const accomp of this.logItem.accomplishments) {
+      for (const accomp of this.logItem.accomplishments.sort()) {
         accomplishments.push(this.formBuilder.control(accomp));
       }
       formInitData.accomplishments = this.formBuilder.array(accomplishments);
@@ -326,9 +327,11 @@ export class LogItemModal implements OnInit {
     for (const mitigation of this.formGroup.value.mitigations) {
       if (mitigation) data.mitigations.push(mitigation);
     }
+    data.mitigations.sort();
     for (const accomp of this.formGroup.value.accomplishments) {
       if (accomp) data.accomplishments.push(accomp);
     }
+    data.accomplishments.sort();
 
     if (this.logItem) {
       data.uid = this.logItem.uid;
