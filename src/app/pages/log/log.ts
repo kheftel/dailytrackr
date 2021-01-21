@@ -585,9 +585,9 @@ export class LogPage implements OnInit, AfterViewInit {
       if (el) this.resetElementY(el);
     });
 
-    this.listItems.forEach((c) => {
-      c.markForCheck();
-    });
+    // this.listItems.forEach((c) => {
+    //   c.markForCheck();
+    // });
 
     console.log("log: prepList");
     console.log(
@@ -933,7 +933,7 @@ export class LogPage implements OnInit, AfterViewInit {
 
     // markForCheck??
 
-    // tween to desired end
+    // tween to desired end, and then reset the y transform
     return this.animationCtrl
       .create("shiftItemElementY")
       .addElement(elem)
@@ -941,7 +941,7 @@ export class LogPage implements OnInit, AfterViewInit {
       .easing("ease-out")
       .fromTo("transform", "translateY(0px)", `translateY(${px}px)`)
       .afterStyles({ transform: "translateY(0px)" })
-      .play();
+      .play()
   }
 
   resetElementY(elem: HTMLElement) {
@@ -950,7 +950,7 @@ export class LogPage implements OnInit, AfterViewInit {
       .addElement(elem)
       .duration(1)
       .fromTo("transform", "translateY(0)", `translateY(0)`)
-      .play();
+      .play({ sync: true });
   }
 
   // shiftListY(

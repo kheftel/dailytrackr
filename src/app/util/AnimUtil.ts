@@ -49,6 +49,12 @@ export class AnimUtil {
     );
   }
 
+  public static randRange(min: number, max: number) {
+    const ret = Math.random() * (max - min) + min;
+    console.log(ret);
+    return ret;
+  }
+
   private static animations: AnimDefinitions = {
     [AnimUtil.ANIM_SCALE_IN]: (animation) =>
       animation
@@ -65,12 +71,16 @@ export class AnimUtil {
         .easing("cubic-bezier(.75,0,1,1)")
         .duration(1000)
         .beforeStyles({ position: "relative", "z-index": 999 })
+        .fromTo("opacity", 1, 0)
         .fromTo(
           "transform",
           "translateY(0) rotate(0)",
-          "translateY(500px) rotate(27deg)"
-        )
-        .fromTo("opacity", 1, 0),
+          `translateY(500px) rotateX(${AnimUtil.randRange(
+            -350,
+            350
+          )}deg) rotateZ(${AnimUtil.randRange(-30, 30)}deg)`
+          // "translateY(500px) rotate(27deg)"
+        ),
     [AnimUtil.ANIM_ITEM_CREATED]: (animation) =>
       animation
         .easing("cubic-bezier(.80,0,1,1)")
@@ -78,11 +88,12 @@ export class AnimUtil {
         .beforeStyles({ position: "relative", "z-index": 999 })
         .fromTo(
           "transform",
-          "translateY(0) scale(2) rotate(27deg)",
-          "translateY(0) scale(1) rotate(0)"
+          // "translateY(0) scale(2) rotate(27deg)",
+          "perspective(500px) translateZ(300px) rotateZ(27deg)",
+          "perspective(500px) translateZ(0) rotate(0)"
         )
         .fromTo("opacity", 0, 1)
-        .afterClearStyles(["position", "z-index"]),
+        .afterClearStyles(["position", "z-index", "transform"]),
     [AnimUtil.ANIM_HALF_PULSE]: (animation) =>
       animation
         .easing("ease-out")
