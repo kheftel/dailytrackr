@@ -38,7 +38,8 @@ ion-item-divider {
 }
 
 .notes {
-  overflow: hidden !important;
+  // overflow: hidden !important;
+  white-space: normal;
 }
 
 .symptom,
