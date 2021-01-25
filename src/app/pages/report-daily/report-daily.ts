@@ -60,6 +60,8 @@ import { HealthlogData } from "../../providers/healthlog-data";
 export interface DailyReport {
   symptoms: NumberMapStats[];
   goodThings: NumberMapStats[];
+  mitigations: string[];
+  accomplishments: string[];
 }
 
 export interface NumberMapStats {
@@ -172,12 +174,23 @@ export class ReportDailyPage implements OnInit {
       }
 
       // process log items... how?
-      this.report = { symptoms: [], goodThings: [] };
+      this.report = {
+        symptoms: [],
+        goodThings: [],
+        mitigations: [],
+        accomplishments: [],
+      };
 
-      this.report.symptoms = this.calculateNumberMapStats('symptoms', false);
-      this.report.goodThings = this.calculateNumberMapStats('goodThings', true);
+      this.report.symptoms = this.calculateNumberMapStats("symptoms", false);
+      this.report.goodThings = this.calculateNumberMapStats("goodThings", true);
+      this.report.mitigations = this.calculateStringArrayStats("mitigations");
+      this.report.accomplishments = this.calculateStringArrayStats(
+        "accomplishments"
+      );
 
-      if(this.refresher) this.refresher.complete();
+      console.log(this.report);
+
+      if (this.refresher) this.refresher.complete();
     });
   }
 
@@ -185,12 +198,21 @@ export class ReportDailyPage implements OnInit {
     this.loadDate();
   }
 
+  ionViewWillEnter() {
+    // if this isn't the first time we've been shown, reload data
+    if(this.dataList != null)
+      this.loadDate();
+  }
+
   addToDay(increment: number) {
     this.curDate = add(this.curDate, { days: increment });
     this.loadDate();
   }
 
-  calculateNumberMapStats(which: string, isPositive:boolean): NumberMapStats[] {
+  calculateNumberMapStats(
+    which: string,
+    isPositive: boolean
+  ): NumberMapStats[] {
     const stats: NumberMapStats[] = [];
 
     for (const item of this.dataList) {
@@ -238,6 +260,42 @@ export class ReportDailyPage implements OnInit {
     // sort stats
     stats.sort((a, b) => (a.name < b.name ? -1 : 1));
 
+    return stats;
+  }
+
+  calculateStringArrayStats(which: string): string[] {
+    const stats: string[] = [];
+    const count: { [key: string]: number } = {};
+
+    for (const logItem of this.dataList) {
+      const stringArray: string[] = logItem[which];
+
+      if (!stringArray) continue;
+
+      for (const item of stringArray) {
+        let str: string = item.trim();
+        if (!stats.includes(str)) {
+          stats.push(str);
+        } else {
+          // it's already in there, add a suffix
+          if (count[str] == null) {
+            count[str] = 2;
+          } else {
+            count[str]++;
+          }
+        }
+      }
+    }
+
+    for (let i = 0; i < stats.length; i++) {
+      let str = stats[i];
+      if (count[str] != null) {
+        stats[i] = str + ` (${count[str]}x)`;
+      }
+    }
+
+    // sort stats
+    stats.sort();
     return stats;
   }
 
