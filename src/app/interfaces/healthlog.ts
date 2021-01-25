@@ -84,13 +84,13 @@ export function calculateNumberMapChanges(
   return updates.sort((a, b) => (a.key < b.key ? -1 : 1));
 }
 
-export function valueToSeverity(value: number, isPositive: boolean) {
+export function valueToColor(value: number, isPositive: boolean) {
   return isPositive
-    ? valueToSeverityPositive(value)
-    : valueToSeverityNegative(value);
+    ? valueToColorPositive(value)
+    : valueToColorNegative(value);
 }
 
-export function valueToSeverityNegative(value: number) {
+export function valueToColorNegative(value: number) {
   if (value <= 2) return "s1";
   else if (value <= 4) return "s2";
   else if (value <= 6) return "s3";
@@ -98,7 +98,7 @@ export function valueToSeverityNegative(value: number) {
   else return "s5";
 }
 
-export function valueToSeverityPositive(value: number) {
+export function valueToColorPositive(value: number) {
   if (value <= 1) return "s5";
   else if (value <= 2) return "s4";
   else if (value <= 4) return "s3";

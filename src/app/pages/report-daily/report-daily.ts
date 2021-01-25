@@ -51,28 +51,33 @@ import {
   LogItem,
   LogItemDisplay,
   NumberMap,
-  valueToSeverity,
-  valueToSeverityNegative,
-  valueToSeverityPositive,
+  valueToColor as valueToColor,
+  valueToColorNegative,
+  valueToColorPositive,
 } from "../../interfaces/healthlog";
 import { HealthlogData } from "../../providers/healthlog-data";
 
 export interface DailyReport {
-  symptoms: NumberMapStats[];
-  goodThings: NumberMapStats[];
-  mitigations: string[];
-  accomplishments: string[];
+  symptoms?: NumberMapStats;
+  goodThings?: NumberMapStats;
+  mitigations?: string[];
+  accomplishments?: string[];
 }
 
 export interface NumberMapStats {
+  numberStats?: NumberStats[];
+  entries?: any[];
+}
+
+export interface NumberStats {
   name: string;
   values: number[];
   maxValue: number;
-  maxSeverity: string;
+  maxColor: string;
   minValue: number;
-  minSeverity: string;
+  minColor: string;
   avgValue: number;
-  avgSeverity: string;
+  avgColor: string;
   [key: string]: any;
 }
 
@@ -174,15 +179,12 @@ export class ReportDailyPage implements OnInit {
       }
 
       // process log items... how?
-      this.report = {
-        symptoms: [],
-        goodThings: [],
-        mitigations: [],
-        accomplishments: [],
-      };
+      this.report = {};
 
-      this.report.symptoms = this.calculateNumberMapStats("symptoms", false);
-      this.report.goodThings = this.calculateNumberMapStats("goodThings", true);
+      const symptoms = this.calculateNumberMapStats("symptoms", false);
+      this.report.symptoms = symptoms.entries.length > 0 ? symptoms : null;
+      const goodThings = this.calculateNumberMapStats("goodThings", true);
+      this.report.goodThings = goodThings.entries.length > 0 ? goodThings : null;
       this.report.mitigations = this.calculateStringArrayStats("mitigations");
       this.report.accomplishments = this.calculateStringArrayStats(
         "accomplishments"
@@ -200,8 +202,7 @@ export class ReportDailyPage implements OnInit {
 
   ionViewWillEnter() {
     // if this isn't the first time we've been shown, reload data
-    if(this.dataList != null)
-      this.loadDate();
+    if (this.dataList != null) this.loadDate();
   }
 
   addToDay(increment: number) {
@@ -209,56 +210,93 @@ export class ReportDailyPage implements OnInit {
     this.loadDate();
   }
 
-  calculateNumberMapStats(
-    which: string,
-    isPositive: boolean
-  ): NumberMapStats[] {
-    const stats: NumberMapStats[] = [];
+  calculateNumberMapStats(which: string, isPositive: boolean): NumberMapStats {
+    const stats: NumberMapStats = {
+      numberStats: [],
+      entries: [],
+    };
 
-    for (const item of this.dataList) {
-      const map: NumberMap = item[which];
-
+    // calculate the list of numbers across all items
+    const numberList: string[] = [];
+    for (const logItem of this.dataList) {
+      const map: NumberMap = logItem[which] as NumberMap;
       if (!map) continue;
 
-      for (const key of Object.keys(map)) {
-        // create stats object if it doesn't exist yet
-        let data = stats.find((v) => v.name === key);
-
-        if (!data) {
-          data = {
-            name: key,
-            values: [],
-            maxValue: -1,
-            maxSeverity: "medium",
-            minValue: 999,
-            minSeverity: "medium",
-            avgValue: -1,
-            avgSeverity: "medium",
-          };
-          stats.push(data);
+      // collect all the number names
+      for (const numberName of Object.keys(map)) {
+        if (!numberList.includes(numberName)) {
+          numberList.push(numberName);
         }
+      }
+    }
+    numberList.sort();
 
-        // add the object
-        data.values.push(map[key]);
+    // create starting stats for each number
+    numberList.forEach((numberName) => {
+      stats.numberStats.push({
+        name: numberName,
+        values: [],
+        maxValue: -1,
+        maxColor: "medium",
+        minValue: 999,
+        minColor: "medium",
+        avgValue: -1,
+        avgColor: "medium",
+      });
+    });
+
+    for (const logItem of this.dataList) {
+      const map: NumberMap = logItem[which] as NumberMap;
+      if (!map) continue;
+
+      // calculate the entries for the list
+      const entry: any = {
+        timeLabel: DateUtil.formatTime(logItem.time.toDate()),
+        numbers: [],
+      };
+      numberList.forEach((numberName) => {
+        // is there a value for it in this map?
+        const value = map[numberName];
+        if (value != null) {
+          entry.numbers.push({
+            name: numberName,
+            value: value,
+            color: valueToColor(value, isPositive),
+          });
+        } else {
+          entry.numbers.push({
+            name: numberName,
+            value: "n/a",
+            color: "medium",
+            deemphasized: true,
+          });
+        }
+      });
+      stats.entries.push(entry);
+
+      // collect all the values for each number in the number maps
+      for (const numberName of Object.keys(map)) {
+        const value: number = map[numberName];
+
+        const data = stats.numberStats.find((v) => v.name === numberName);
+        // add the value to the values
+        data.values.push(value);
       }
     }
 
     // calculate min/max values etc
-    for (const item of stats) {
+    for (const numberStats of stats.numberStats) {
       let sum = 0;
-      if (item.values.length > 0) {
-        for (const value of item.values) {
-          if (item.maxValue < value) item.maxValue = value;
-          if (item.minValue > value) item.minValue = value;
+      if (numberStats.values.length > 0) {
+        for (const value of numberStats.values) {
+          if (numberStats.maxValue < value) numberStats.maxValue = value;
+          if (numberStats.minValue > value) numberStats.minValue = value;
           sum += value;
         }
-        item.avgValue = sum / item.values.length;
-        this.numberMapStatsSetSeverity(item, isPositive);
+        numberStats.avgValue = sum / numberStats.values.length;
+        this.numberStatsSetColor(numberStats, isPositive);
       }
     }
-
-    // sort stats
-    stats.sort((a, b) => (a.name < b.name ? -1 : 1));
 
     return stats;
   }
@@ -273,7 +311,7 @@ export class ReportDailyPage implements OnInit {
       if (!stringArray) continue;
 
       for (const item of stringArray) {
-        let str: string = item.trim();
+        const str: string = item.trim();
         if (!stats.includes(str)) {
           stats.push(str);
         } else {
@@ -288,7 +326,7 @@ export class ReportDailyPage implements OnInit {
     }
 
     for (let i = 0; i < stats.length; i++) {
-      let str = stats[i];
+      const str = stats[i];
       if (count[str] != null) {
         stats[i] = str + ` (${count[str]}x)`;
       }
@@ -299,9 +337,9 @@ export class ReportDailyPage implements OnInit {
     return stats;
   }
 
-  numberMapStatsSetSeverity(n: NumberMapStats, isPositive: boolean) {
-    n.maxSeverity = valueToSeverity(n.maxValue, isPositive);
-    n.minSeverity = valueToSeverity(n.minValue, isPositive);
-    n.avgSeverity = valueToSeverity(n.avgValue, isPositive);
+  numberStatsSetColor(n: NumberStats, isPositive: boolean) {
+    n.maxColor = valueToColor(n.maxValue, isPositive);
+    n.minColor = valueToColor(n.minValue, isPositive);
+    n.avgColor = valueToColor(n.avgValue, isPositive);
   }
 }

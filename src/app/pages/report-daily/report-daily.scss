@@ -40,15 +40,42 @@
 
 h3 {
   font-size: 18px;
+  font-weight: 900;
   margin-bottom: 4px;
   margin-top: 8px;
+}
+
+h4 {
+  font-size: 14px;
+  font-weight: normal;
+  margin-bottom: 4px;
+  margin-top: 4px;
 }
 
 .colorbg {
   div {
     background: rgba(var(--ion-color-base-rgb), 0.12);
   }
-} 
+}
+
+.deemphasized {
+  // opacity: 0.3;
+  div {
+    color: var(--ion-color-step-200);
+  }
+}
+
+.vertical-header {
+  font-size: 12px;
+  writing-mode: vertical-lr;
+  text-align: end;
+  padding: 8px 0px 4px 4px;
+  margin: 2px;
+  border-left: 2px solid var(--ion-color-base);
+  border-bottom: 1px solid var(--ion-color-base);
+  // background: rgba(var(--ion-color-base-rgb), 0.12);
+  color: var(--ion-text-color);
+}
 
 .cell {
   font-size: 12px;
@@ -59,10 +86,10 @@ h3 {
     border-left: 2px solid var(--ion-color-base);
     border-bottom: 1px solid var(--ion-color-base);
     // background: rgba(var(--ion-color-base-rgb), 0.12);
-    color: var(--ion-text-color);
+    // color: var(--ion-text-color);
 
     white-space: nowrap;
-    overflow:hidden;
+    overflow: hidden;
     text-overflow: ellipsis;
   }
 }

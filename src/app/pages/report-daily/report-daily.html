@@ -50,50 +50,75 @@
     </ion-row>
 
     <ng-container *ngIf="dataList && dataList.length > 0">
+      <ng-container *ngIf="report.symptoms">
+        <ion-row>
+          <ion-col class="cell">
+            <h3>Symptoms</h3>
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col class="cell ion-color-medium" size="4" size-md="8">
+            <div>Name</div>
+          </ion-col>
+          <ion-col class="cell ion-color-medium" size="2" size-md="1">
+            <div>Max</div>
+          </ion-col>
+          <ion-col class="cell ion-color-medium" size="2" size-md="1">
+            <div>Min</div>
+          </ion-col>
+          <ion-col class="cell ion-color-medium" size="2" size-md="1">
+            <div>Avg</div>
+          </ion-col>
+          <ion-col class="cell ion-color-medium" size="2" size-md="1">
+            <div># tracked</div>
+          </ion-col>
+        </ion-row>
+        <ion-row *ngFor="let numberStats of report.symptoms.numberStats">
+          <ion-col class="cell ion-color-medium" size="4" size-md="8">
+            <div>{{numberStats.name}}</div>
+          </ion-col>
+          <ion-col class="cell ion-color-{{numberStats.maxColor}} colorbg" size="2" size-md="1">
+            <div>{{numberStats.maxValue}}</div>
+          </ion-col>
+          <ion-col class="cell ion-color-{{numberStats.minColor}} colorbg" size="2" size-md="1">
+            <div>{{numberStats.minValue}}</div>
+          </ion-col>
+          <ion-col class="cell ion-color-{{numberStats.avgColor}} colorbg" size="2" size-md="1">
+            <div>{{numberStats.avgValue.toFixed(2)}}</div>
+          </ion-col>
+          <ion-col class="cell ion-color-medium" size="2" size-md="1">
+            <div>{{numberStats.values.length}}</div>
+          </ion-col>
+        </ion-row>
 
-      <ion-row>
-        <ion-col>
-          <h3>Symptoms</h3>
-        </ion-col>
-      </ion-row>
-      <ion-row>
-        <ion-col class="cell ion-color-medium" size="4" size-md="8">
-          <div>Name</div>
-        </ion-col>
-        <ion-col class="cell ion-color-medium" size="2" size-md="1">
-          <div>Max</div>
-        </ion-col>
-        <ion-col class="cell ion-color-medium" size="2" size-md="1">
-          <div>Min</div>
-        </ion-col>
-        <ion-col class="cell ion-color-medium" size="2" size-md="1">
-          <div>Avg</div>
-        </ion-col>
-        <ion-col class="cell ion-color-medium" size="2" size-md="1">
-          <div># tracked</div>
-        </ion-col>
-      </ion-row>
-      <ion-row *ngFor="let item of report.symptoms">
-        <ion-col class="cell ion-color-medium" size="4" size-md="8">
-          <div>{{item.name}}</div>
-        </ion-col>
-        <ion-col class="cell ion-color-{{item.maxSeverity}} colorbg" size="2" size-md="1">
-          <div>{{item.maxValue}}</div>
-        </ion-col>
-        <ion-col class="cell ion-color-{{item.minSeverity}} colorbg" size="2" size-md="1">
-          <div>{{item.minValue}}</div>
-        </ion-col>
-        <ion-col class="cell ion-color-{{item.avgSeverity}} colorbg" size="2" size-md="1">
-          <div>{{item.avgValue.toFixed(2)}}</div>
-        </ion-col>
-        <ion-col class="cell ion-color-medium" size="2" size-md="1">
-          <div>{{item.values.length}}</div>
-        </ion-col>
-      </ion-row>
+        <ion-row>
+          <ion-col class="cell">
+            <h4>Entries</h4>
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col class="vertical-header colorbg ion-color-medium">
+            Time
+          </ion-col>
+          <ion-col *ngFor="let n of report.symptoms.entries[0].numbers" class="vertical-header ion-color-medium colorbg">
+            {{n.name}}
+          </ion-col>
+        </ion-row>
+        <ion-row *ngFor="let entry of report.symptoms.entries">
+          <ion-col class="cell ion-color-medium">
+            <div>{{entry.timeLabel}}</div>
+          </ion-col>
+          <ion-col *ngFor="let n of entry.numbers" [class.deemphasized]="n.deemphasized" class="cell ion-color-{{n.color}} colorbg">
+            <div>
+              {{n.value}}
+            </div>
+          </ion-col>
+        </ion-row>
+      </ng-container>
 
       <ng-container *ngIf="report.mitigations && report.mitigations.length > 0">
         <ion-row>
-          <ion-col>
+          <ion-col class="cell">
             <h3>Mitigations</h3>
           </ion-col>
         </ion-row>
@@ -104,49 +129,75 @@
         </ion-row>
       </ng-container>
 
-      <ion-row>
-        <ion-col>
-          <h3>Good Things</h3>
-        </ion-col>
-      </ion-row>
-      <ion-row>
-        <ion-col class="cell ion-color-medium" size="4" size-md="8">
-          <div>Name</div>
-        </ion-col>
-        <ion-col class="cell ion-color-medium" size="2" size-md="1">
-          <div>Max</div>
-        </ion-col>
-        <ion-col class="cell ion-color-medium" size="2" size-md="1">
-          <div>Min</div>
-        </ion-col>
-        <ion-col class="cell ion-color-medium" size="2" size-md="1">
-          <div>Avg</div>
-        </ion-col>
-        <ion-col class="cell ion-color-medium" size="2" size-md="1">
-          <div># tracked</div>
-        </ion-col>
-      </ion-row>
-      <ion-row *ngFor="let item of report.goodThings">
-        <ion-col class="cell ion-color-medium" size="4" size-md="8">
-          <div>{{item.name}}</div>
-        </ion-col>
-        <ion-col class="cell ion-color-{{item.maxSeverity}} colorbg" size="2" size-md="1">
-          <div>{{item.maxValue}}</div>
-        </ion-col>
-        <ion-col class="cell ion-color-{{item.minSeverity}} colorbg" size="2" size-md="1">
-          <div>{{item.minValue}}</div>
-        </ion-col>
-        <ion-col class="cell ion-color-{{item.avgSeverity}} colorbg" size="2" size-md="1">
-          <div>{{item.avgValue.toFixed(2)}}</div>
-        </ion-col>
-        <ion-col class="cell ion-color-medium" size="2" size-md="1">
-          <div>{{item.values.length}}</div>
-        </ion-col>
-      </ion-row>
+      <ng-container *ngIf="report.goodThings">
+        <ion-row>
+          <ion-col class="cell">
+            <h3>Good Things</h3>
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col class="cell ion-color-medium" size="4" size-md="8">
+            <div>Name</div>
+          </ion-col>
+          <ion-col class="cell ion-color-medium" size="2" size-md="1">
+            <div>Max</div>
+          </ion-col>
+          <ion-col class="cell ion-color-medium" size="2" size-md="1">
+            <div>Min</div>
+          </ion-col>
+          <ion-col class="cell ion-color-medium" size="2" size-md="1">
+            <div>Avg</div>
+          </ion-col>
+          <ion-col class="cell ion-color-medium" size="2" size-md="1">
+            <div># tracked</div>
+          </ion-col>
+        </ion-row>
+        <ion-row *ngFor="let numberStats of report.goodThings.numberStats">
+          <ion-col class="cell ion-color-medium" size="4" size-md="8">
+            <div>{{numberStats.name}}</div>
+          </ion-col>
+          <ion-col class="cell ion-color-{{numberStats.maxColor}} colorbg" size="2" size-md="1">
+            <div>{{numberStats.maxValue}}</div>
+          </ion-col>
+          <ion-col class="cell ion-color-{{numberStats.minColor}} colorbg" size="2" size-md="1">
+            <div>{{numberStats.minValue}}</div>
+          </ion-col>
+          <ion-col class="cell ion-color-{{numberStats.avgColor}} colorbg" size="2" size-md="1">
+            <div>{{numberStats.avgValue.toFixed(2)}}</div>
+          </ion-col>
+          <ion-col class="cell ion-color-medium" size="2" size-md="1">
+            <div>{{numberStats.values.length}}</div>
+          </ion-col>
+        </ion-row>
+
+        <ion-row>
+          <ion-col class="cell">
+            <h4>Entries</h4>
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col class="vertical-header colorbg ion-color-medium">
+            Time
+          </ion-col>
+          <ion-col *ngFor="let n of report.goodThings.entries[0].numbers" class="vertical-header ion-color-medium colorbg">
+            {{n.name}}
+          </ion-col>
+        </ion-row>
+        <ion-row *ngFor="let entry of report.goodThings.entries">
+          <ion-col class="cell ion-color-medium">
+            <div>{{entry.timeLabel}}</div>
+          </ion-col>
+          <ion-col *ngFor="let n of entry.numbers" [class.deemphasized]="n.deemphasized" class="cell ion-color-{{n.color}} colorbg">
+            <div>
+              {{n.value}}
+            </div>
+          </ion-col>
+        </ion-row>
+      </ng-container>
 
       <ng-container *ngIf="report.accomplishments && report.accomplishments.length > 0">
         <ion-row>
-          <ion-col>
+          <ion-col class="cell">
             <h3>Accomplishments</h3>
           </ion-col>
         </ion-row>
