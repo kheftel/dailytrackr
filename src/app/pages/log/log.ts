@@ -29,7 +29,7 @@ import { ScheduleFilterPage } from "../schedule-filter/schedule-filter";
 import { ConferenceData } from "../../providers/conference-data";
 import { UserData } from "../../providers/user-data";
 import { Observable, Subscription } from "rxjs";
-import { format, startOfDay } from "date-fns";
+import { add, format, startOfDay } from "date-fns";
 
 import firebase from "firebase/app";
 import "firebase/firestore";
@@ -589,10 +589,10 @@ export class LogPage implements OnInit, AfterViewInit {
     //   c.markForCheck();
     // });
 
-    console.log("log: prepList");
-    console.log(
-      list.map((item) => item.data.time.toDate().toISOString()).join(", ")
-    );
+    // console.log("log: prepList");
+    // console.log(
+    //   list.map((item) => item.data.time.toDate().toLocaleString()).join(", ")
+    // );
 
     // for (let i = 0; i < list.length; i++) {
     //   const item = list[i];
@@ -941,7 +941,7 @@ export class LogPage implements OnInit, AfterViewInit {
       .easing("ease-out")
       .fromTo("transform", "translateY(0px)", `translateY(${px}px)`)
       .afterStyles({ transform: "translateY(0px)" })
-      .play()
+      .play();
   }
 
   resetElementY(elem: HTMLElement) {

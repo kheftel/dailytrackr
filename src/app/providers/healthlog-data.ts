@@ -5,7 +5,7 @@ import {
   AngularFirestoreDocument,
   QueryFn,
 } from "@angular/fire/firestore";
-import { format } from "date-fns";
+import { format, startOfToday, startOfDay, endOfDay } from "date-fns";
 import { Observable, of } from "rxjs";
 import { map } from "rxjs/operators";
 
@@ -99,6 +99,29 @@ export class HealthlogData {
           return null;
         })
       );
+  }
+
+  getDayOnce(date?: number | Date) {
+    let uid;
+    if (this.user) {
+      uid = this.user.uid;
+    } else {
+      throw new Error("getStream: not logged in");
+    }
+
+    const now = date ? date : new Date();
+    const start = startOfDay(now);
+    const end = endOfDay(now);
+
+    return this.firestore
+      .collection<LogItem>("healthlog", (ref) =>
+        ref
+          .where("uid", "==", uid)
+          .orderBy("time", "desc")
+          .where("time", ">=", start)
+          .where("time", "<=", end)
+      )
+      .get()
   }
 
   getStreamNoSearchQuery(

@@ -26,6 +26,11 @@ export class AppComponent implements OnInit {
       icon: "analytics",
     },
     {
+      title: "Daily",
+      url: "/app/tabs/daily",
+      icon: "stats-chart",
+    },
+    {
       title: "Schedule",
       url: "/app/tabs/schedule",
       icon: "calendar",

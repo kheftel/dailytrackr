@@ -48,6 +48,8 @@ import {
   LogItemChange,
   NumberMap,
   NumberMapChange,
+  valueToSeverityNegative,
+  valueToSeverityPositive,
 } from "../../interfaces/healthlog";
 import { AnimUtil } from "../../util/AnimUtil";
 import { DateUtil } from "../../util/DateUtil";
@@ -140,21 +142,21 @@ export class LogItemComponent implements OnInit {
     return Object.keys(obj).length > 0;
   }
 
-  valueToSeverityNegative(value: number) {
-    if (value <= 2) return "s1";
-    else if (value <= 4) return "s2";
-    else if (value <= 6) return "s3";
-    else if (value <= 8) return "s4";
-    else return "s5";
-  }
+  // valueToSeverityNegative(value: number) {
+  //   if (value <= 2) return "s1";
+  //   else if (value <= 4) return "s2";
+  //   else if (value <= 6) return "s3";
+  //   else if (value <= 8) return "s4";
+  //   else return "s5";
+  // }
 
-  valueToSeverityPositive(value: number) {
-    if (value <= 1) return "s5";
-    else if (value <= 2) return "s4";
-    else if (value <= 4) return "s3";
-    else if (value <= 7) return "s2";
-    else return "s1";
-  }
+  // valueToSeverityPositive(value: number) {
+  //   if (value <= 1) return "s5";
+  //   else if (value <= 2) return "s4";
+  //   else if (value <= 4) return "s3";
+  //   else if (value <= 7) return "s2";
+  //   else return "s1";
+  // }
 
   prepSymptoms(symptoms: any) {
     const ret = [];
@@ -163,7 +165,7 @@ export class LogItemComponent implements OnInit {
       item.value = symptoms[key];
       item.name = key;
       item.severity = "";
-      item.severity = this.valueToSeverityNegative(item.value);
+      item.severity = valueToSeverityNegative(item.value);
       ret.push(item);
     }
     return ret;
@@ -176,7 +178,7 @@ export class LogItemComponent implements OnInit {
       item.value = goodThings[key];
       item.name = key;
       item.severity = "";
-      item.severity = this.valueToSeverityPositive(item.value);
+      item.severity = valueToSeverityPositive(item.value);
       ret.push(item);
     }
     return ret;
@@ -387,8 +389,8 @@ export class LogItemComponent implements OnInit {
 
       // pulse the row in staggered fashion
       const severityColor = isNegative
-        ? this.valueToSeverityNegative(change.value)
-        : this.valueToSeverityPositive(change.value);
+        ? valueToSeverityNegative(change.value)
+        : valueToSeverityPositive(change.value);
       this.setupNumberMapAnimation(
         LogItemComponent.STAGGER_INTERVAL * count,
         nameSingular + "-" + change.key,

@@ -89,8 +89,11 @@ export class AnimUtil {
         .fromTo(
           "transform",
           // "translateY(0) scale(2) rotate(27deg)",
-          "perspective(500px) translateZ(300px) rotateZ(27deg)",
-          "perspective(500px) translateZ(0) rotate(0)"
+          `perspective(500px) translateZ(400px) rotateY(0) rotateZ(${AnimUtil.randRange(
+            -27,
+            27
+          )}deg)`,
+          "perspective(500px) translateZ(0) rotateY(0) rotateZ(0)"
         )
         .fromTo("opacity", 0, 1)
         .afterClearStyles(["position", "z-index", "transform"]),

@@ -83,3 +83,25 @@ export function calculateNumberMapChanges(
 
   return updates.sort((a, b) => (a.key < b.key ? -1 : 1));
 }
+
+export function valueToSeverity(value: number, isPositive: boolean) {
+  return isPositive
+    ? valueToSeverityPositive(value)
+    : valueToSeverityNegative(value);
+}
+
+export function valueToSeverityNegative(value: number) {
+  if (value <= 2) return "s1";
+  else if (value <= 4) return "s2";
+  else if (value <= 6) return "s3";
+  else if (value <= 8) return "s4";
+  else return "s5";
+}
+
+export function valueToSeverityPositive(value: number) {
+  if (value <= 1) return "s5";
+  else if (value <= 2) return "s4";
+  else if (value <= 4) return "s3";
+  else if (value <= 7) return "s2";
+  else return "s1";
+}

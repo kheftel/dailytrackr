@@ -1,0 +1,146 @@
+<ion-header translucent="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Daily Report</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content fullscreen="true" #content>
+  <!-- secondary header for ios -->
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Daily Report</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <!-- pull-to-refresh -->
+  <ion-refresher (ionRefresh)="onRefresh()" slot="fixed" #refresher>
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <ion-grid>
+    <ion-row class="day-nav">
+      <ion-col size="2" size-md="1">
+        <ion-button class="prev" (click)="addToDay(-1)" expand="block">
+          <ion-icon name="arrow-back"></ion-icon>
+        </ion-button>
+      </ion-col>
+      <ion-col size="8" size-md="10">
+        <ion-button class="day" expand="block">
+          <ion-text style="font-size: 20px">{{dateLabel}}</ion-text>
+        </ion-button>
+      </ion-col>
+      <ion-col size="2" size-md="1">
+        <ion-button class="next" (click)="addToDay(1)" expand="block">
+          <ion-icon name="arrow-forward"></ion-icon>
+        </ion-button>
+      </ion-col>
+    </ion-row>
+    <ion-row *ngIf="loading && !dataList">
+      <ion-col>
+        <ion-spinner></ion-spinner>
+      </ion-col>
+    </ion-row>
+    <ion-row *ngIf="!loading && dataList && dataList.length === 0">
+      <ion-col>
+        No data found.
+      </ion-col>
+    </ion-row>
+
+    <ng-container *ngIf="dataList && dataList.length > 0">
+
+      <ion-row>
+        <ion-col>
+          <h3>Symptoms</h3>
+        </ion-col>
+      </ion-row>
+      <ion-row>
+        <ion-col class="cell ion-color-medium" size="4" size-md="8">
+          <div>Name</div>
+        </ion-col>
+        <ion-col class="cell ion-color-medium" size="2" size-md="1">
+          <div>Max</div>
+        </ion-col>
+        <ion-col class="cell ion-color-medium" size="2" size-md="1">
+          <div>Min</div>
+        </ion-col>
+        <ion-col class="cell ion-color-medium" size="2" size-md="1">
+          <div>Avg</div>
+        </ion-col>
+        <ion-col class="cell ion-color-medium" size="2" size-md="1">
+          <div># tracked</div>
+        </ion-col>
+      </ion-row>
+      <ion-row *ngFor="let item of report.symptoms">
+        <ion-col class="cell ion-color-medium" size="4" size-md="8">
+          <div>{{item.name}}</div>
+        </ion-col>
+        <ion-col class="cell ion-color-{{item.maxSeverity}} colorbg" size="2" size-md="1">
+          <div>{{item.maxValue}}</div>
+        </ion-col>
+        <ion-col class="cell ion-color-{{item.minSeverity}} colorbg" size="2" size-md="1">
+          <div>{{item.minValue}}</div>
+        </ion-col>
+        <ion-col class="cell ion-color-{{item.avgSeverity}} colorbg" size="2" size-md="1">
+          <div>{{item.avgValue.toFixed(2)}}</div>
+        </ion-col>
+        <ion-col class="cell ion-color-medium" size="2" size-md="1">
+          <div>{{item.values.length}}</div>
+        </ion-col>
+      </ion-row>
+
+      <ion-row>
+        <ion-col>
+          <h3>Good Things</h3>
+        </ion-col>
+      </ion-row>
+      <ion-row>
+        <ion-col class="cell ion-color-medium" size="4" size-md="8">
+          <div>Name</div>
+        </ion-col>
+        <ion-col class="cell ion-color-medium" size="2" size-md="1">
+          <div>Max</div>
+        </ion-col>
+        <ion-col class="cell ion-color-medium" size="2" size-md="1">
+          <div>Min</div>
+        </ion-col>
+        <ion-col class="cell ion-color-medium" size="2" size-md="1">
+          <div>Avg</div>
+        </ion-col>
+        <ion-col class="cell ion-color-medium" size="2" size-md="1">
+          <div># tracked</div>
+        </ion-col>
+      </ion-row>
+      <ion-row *ngFor="let item of report.goodThings">
+        <ion-col class="cell ion-color-medium" size="4" size-md="8">
+          <div>{{item.name}}</div>
+        </ion-col>
+        <ion-col class="cell ion-color-{{item.maxSeverity}} colorbg" size="2" size-md="1">
+          <div>{{item.maxValue}}</div>
+        </ion-col>
+        <ion-col class="cell ion-color-{{item.minSeverity}} colorbg" size="2" size-md="1">
+          <div>{{item.minValue}}</div>
+        </ion-col>
+        <ion-col class="cell ion-color-{{item.avgSeverity}} colorbg" size="2" size-md="1">
+          <div>{{item.avgValue.toFixed(2)}}</div>
+        </ion-col>
+        <ion-col class="cell ion-color-medium" size="2" size-md="1">
+          <div>{{item.values.length}}</div>
+        </ion-col>
+      </ion-row>
+
+    </ng-container>
+  </ion-grid>
+
+  <!-- <ion-list lines="none" #logList *ngIf="dataList && dataList.length > 0">
+
+    <ng-container *ngFor="let item of dataList">
+
+      <app-logitem [logItem]="item.data" [logItemId]="item.doc.id" [id]="item.doc.id" (edit)="onClickEdit($event)"></app-logitem>
+      
+    </ng-container>
+
+  </ion-list> -->
+</ion-content>

@@ -3,6 +3,7 @@ import { RouterModule, Routes } from "@angular/router";
 import { TabsPage } from "./tabs-page";
 import { SchedulePage } from "../schedule/schedule";
 import { LogPage } from "../log/log";
+import { ReportDailyPage } from "../report-daily/report-daily";
 
 const routes: Routes = [
   {
@@ -15,6 +16,15 @@ const routes: Routes = [
           {
             path: "",
             component: LogPage,
+          },
+        ],
+      },
+      {
+        path: "daily",
+        children: [
+          {
+            path: "",
+            component: ReportDailyPage,
           },
         ],
       },
