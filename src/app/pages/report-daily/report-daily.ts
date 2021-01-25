@@ -176,7 +176,13 @@ export class ReportDailyPage implements OnInit {
 
       this.report.symptoms = this.calculateNumberMapStats('symptoms', false);
       this.report.goodThings = this.calculateNumberMapStats('goodThings', true);
+
+      if(this.refresher) this.refresher.complete();
     });
+  }
+
+  onRefresh() {
+    this.loadDate();
   }
 
   addToDay(increment: number) {
