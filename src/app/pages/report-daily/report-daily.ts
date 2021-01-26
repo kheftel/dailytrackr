@@ -67,6 +67,8 @@ export interface DailyReport {
 export interface NumberMapStats {
   numberStats?: NumberStats[];
   entries?: any[];
+  names?: string[];
+  numColumns?:number;
 }
 
 export interface NumberStats {
@@ -184,7 +186,8 @@ export class ReportDailyPage implements OnInit {
       const symptoms = this.calculateNumberMapStats("symptoms", false);
       this.report.symptoms = symptoms.entries.length > 0 ? symptoms : null;
       const goodThings = this.calculateNumberMapStats("goodThings", true);
-      this.report.goodThings = goodThings.entries.length > 0 ? goodThings : null;
+      this.report.goodThings =
+        goodThings.entries.length > 0 ? goodThings : null;
       this.report.mitigations = this.calculateStringArrayStats("mitigations");
       this.report.accomplishments = this.calculateStringArrayStats(
         "accomplishments"
@@ -214,6 +217,7 @@ export class ReportDailyPage implements OnInit {
     const stats: NumberMapStats = {
       numberStats: [],
       entries: [],
+      names: [],
     };
 
     // calculate the list of numbers across all items
@@ -230,6 +234,9 @@ export class ReportDailyPage implements OnInit {
       }
     }
     numberList.sort();
+
+    stats.names = [...numberList];
+    stats.numColumns = numberList.length + 1;
 
     // create starting stats for each number
     numberList.forEach((numberName) => {
@@ -251,7 +258,9 @@ export class ReportDailyPage implements OnInit {
 
       // calculate the entries for the list
       const entry: any = {
-        timeLabel: DateUtil.formatTime(logItem.time.toDate()),
+        timeLabel: DateUtil.formatTime(logItem.time.toDate())
+          .replace(" AM", "a")
+          .replace(" PM", "p"),
         numbers: [],
       };
       numberList.forEach((numberName) => {
@@ -259,13 +268,11 @@ export class ReportDailyPage implements OnInit {
         const value = map[numberName];
         if (value != null) {
           entry.numbers.push({
-            name: numberName,
             value: value,
             color: valueToColor(value, isPositive),
           });
         } else {
           entry.numbers.push({
-            name: numberName,
             value: "n/a",
             color: "medium",
             deemphasized: true,

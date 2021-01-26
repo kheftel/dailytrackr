@@ -50,7 +50,7 @@
     </ion-row>
 
     <ng-container *ngIf="dataList && dataList.length > 0">
-      <ng-container *ngIf="report.symptoms">
+      <ng-container *ngIf="report.symptoms as mapStats">
         <ion-row>
           <ion-col class="cell">
             <h3>Symptoms</h3>
@@ -73,7 +73,7 @@
             <div># tracked</div>
           </ion-col>
         </ion-row>
-        <ion-row *ngFor="let numberStats of report.symptoms.numberStats">
+        <ion-row *ngFor="let numberStats of mapStats.numberStats">
           <ion-col class="cell ion-color-medium" size="4" size-md="8">
             <div>{{numberStats.name}}</div>
           </ion-col>
@@ -96,15 +96,15 @@
             <h4>Entries</h4>
           </ion-col>
         </ion-row>
-        <ion-row>
-          <ion-col class="vertical-header colorbg ion-color-medium">
-            Time
+        <ion-row class="equal-columns-{{mapStats.numColumns}}">
+          <ion-col class="vertical-header ion-color-medium">
+            <div>Time</div>
           </ion-col>
-          <ion-col *ngFor="let n of report.symptoms.entries[0].numbers" class="vertical-header ion-color-medium colorbg">
-            {{n.name}}
+          <ion-col *ngFor="let n of mapStats.names" class="vertical-header ion-color-medium">
+            <div>{{n}}</div>
           </ion-col>
         </ion-row>
-        <ion-row *ngFor="let entry of report.symptoms.entries">
+        <ion-row class="equal-columns-{{mapStats.numColumns}}" *ngFor="let entry of mapStats.entries">
           <ion-col class="cell ion-color-medium">
             <div>{{entry.timeLabel}}</div>
           </ion-col>
@@ -129,7 +129,7 @@
         </ion-row>
       </ng-container>
 
-      <ng-container *ngIf="report.goodThings">
+      <ng-container *ngIf="report.goodThings as mapStats">
         <ion-row>
           <ion-col class="cell">
             <h3>Good Things</h3>
@@ -152,7 +152,7 @@
             <div># tracked</div>
           </ion-col>
         </ion-row>
-        <ion-row *ngFor="let numberStats of report.goodThings.numberStats">
+        <ion-row *ngFor="let numberStats of mapStats.numberStats">
           <ion-col class="cell ion-color-medium" size="4" size-md="8">
             <div>{{numberStats.name}}</div>
           </ion-col>
@@ -175,15 +175,15 @@
             <h4>Entries</h4>
           </ion-col>
         </ion-row>
-        <ion-row>
-          <ion-col class="vertical-header colorbg ion-color-medium">
-            Time
+        <ion-row class="equal-columns-{{mapStats.numColumns}}">
+          <ion-col class="vertical-header ion-color-medium">
+            <div>Time</div>
           </ion-col>
-          <ion-col *ngFor="let n of report.goodThings.entries[0].numbers" class="vertical-header ion-color-medium colorbg">
-            {{n.name}}
+          <ion-col *ngFor="let n of mapStats.names" class="vertical-header ion-color-medium">
+            <div>{{n}}</div>
           </ion-col>
         </ion-row>
-        <ion-row *ngFor="let entry of report.goodThings.entries">
+        <ion-row class="equal-columns-{{mapStats.numColumns}}" *ngFor="let entry of mapStats.entries">
           <ion-col class="cell ion-color-medium">
             <div>{{entry.timeLabel}}</div>
           </ion-col>
@@ -193,6 +193,7 @@
             </div>
           </ion-col>
         </ion-row>
+
       </ng-container>
 
       <ng-container *ngIf="report.accomplishments && report.accomplishments.length > 0">
